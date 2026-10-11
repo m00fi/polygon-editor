@@ -1,8 +1,6 @@
 namespace PolygonEditor.UI;
 
-/// <summary>
-/// Panel with double buffering enabled for scene rendering.
-/// </summary>
+/// <summary>Panel canvasu z double buffering.</summary>
 public sealed class CanvasPanel : Panel
 {
     public CanvasPanel()
