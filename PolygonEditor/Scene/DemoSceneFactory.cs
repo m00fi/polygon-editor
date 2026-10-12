@@ -1,4 +1,5 @@
 using PolygonEditor.Models;
+using PolygonEditor.Constraints;
 
 namespace PolygonEditor.Scene;
 
@@ -8,6 +9,7 @@ public static class DemoSceneFactory
     public static Models.Scene Create()
     {
         var scene = new Models.Scene();
+        var constraintStore = new ConstraintStore();
 
         // Prostokąt po lewej.
         scene.Add(Models.Polygon.FromPoints(
@@ -23,6 +25,11 @@ public static class DemoSceneFactory
             new PointF(620, 200),
             new PointF(500, 280),
             new PointF(360, 220)));
+
+        constraintStore.AddConstraint(new LengthConstraint(scene.Polygons[0].Edges[0], 200.0f));
+        constraintStore.AddConstraint(new ParallelConstraint(scene.Polygons[0].Edges[0], scene.Polygons[0].Edges[2]));
+
+        scene.AddConstraintStore(constraintStore);
 
         return scene;
     }

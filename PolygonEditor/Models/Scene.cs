@@ -1,16 +1,25 @@
 namespace PolygonEditor.Models;
+using PolygonEditor.Constraints;
 
 /// <summary>Scena z wielokątami na canvasie.</summary>
 public sealed class Scene
 {
     private readonly List<Polygon> _polygons = [];
+    private ConstraintStore _constraintStore = new ConstraintStore();
 
     public IReadOnlyList<Polygon> Polygons => _polygons;
+    public ConstraintStore Constraints => _constraintStore;
 
     public void Add(Polygon polygon)
     {
         ArgumentNullException.ThrowIfNull(polygon);
         _polygons.Add(polygon);
+    }
+
+    public void AddConstraintStore(ConstraintStore constraintStore)
+    {
+        ArgumentNullException.ThrowIfNull(constraintStore);
+        _constraintStore = constraintStore;
     }
 
     public bool Remove(Polygon polygon) => _polygons.Remove(polygon);

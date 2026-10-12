@@ -1,3 +1,4 @@
+using PolygonEditor.Constraints;
 using PolygonEditor.Drawing;
 using PolygonEditor.Interaction;
 using PolygonEditor.Models;
@@ -15,6 +16,8 @@ public partial class MainForm : Form
     private Vertex? _dragVertex;
     private Models.Polygon? _dragPolygon;
     private PointF _lastMouse;
+
+    private ConstraintSolver _solver = new ConstraintSolver();
 
     public MainForm()
     {
@@ -177,6 +180,7 @@ public partial class MainForm : Form
         if (_dragKind == HitKind.Vertex && _dragVertex is not null)
         {
             _dragVertex.Position = point;
+            _solver.Solve(_scene.Constraints, new ConstraintAnchor { FixedVertex = _dragVertex });
             canvasPanel.Invalidate();
         }
         else if (_dragKind == HitKind.Polygon && _dragPolygon is not null)
