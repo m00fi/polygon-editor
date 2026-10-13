@@ -79,6 +79,8 @@ public sealed class Polygon
         return mid;
     }
 
+    public bool CanRemoveVertex(Vertex vertex) => _vertices.Count > 3 && _vertices.Contains(vertex);
+
     /// <summary>Usuwa wierzchołek (min. 3 muszą zostać). Zwraca false, gdy usunięcie niemożliwe.</summary>
     public bool RemoveVertex(Vertex vertex)
     {

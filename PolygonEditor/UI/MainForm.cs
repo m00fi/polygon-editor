@@ -136,6 +136,7 @@ public partial class MainForm : Form
     {
         if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
         {
+            _scene.Constraints.RemoveAllInvolvingEdge(hit.Edge);
             hit.Polygon.InsertVertexAtMidpoint(hit.Edge);
             canvasPanel.Invalidate();
             UpdateStatus("Vertex added at edge midpoint.");
@@ -144,8 +145,14 @@ public partial class MainForm : Form
 
         if (hit.Kind == HitKind.Vertex && hit.Polygon is not null && hit.Vertex is not null)
         {
-            if (hit.Polygon.RemoveVertex(hit.Vertex))
+            if (hit.Polygon.CanRemoveVertex(hit.Vertex))
             {
+                var edgesInvolved = hit.Polygon.EdgesAffectedByVertexRemoval(hit.Vertex);
+
+                foreach (var edge in edgesInvolved)
+                    _scene.Constraints.RemoveAllInvolvingEdge(edge);
+                
+                hit.Polygon.RemoveVertex(hit.Vertex);
                 canvasPanel.Invalidate();
                 UpdateStatus("Vertex deleted.");
             }
