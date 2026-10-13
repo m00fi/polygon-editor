@@ -175,7 +175,8 @@ partial class MainForm
         // 
         edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem });
         edgeContexMenu.Name = "edgeContexMenu";
-        edgeContexMenu.Size = new Size(232, 114);
+        edgeContexMenu.Size = new Size(232, 136);
+        edgeContexMenu.Opening += edgeContexMenu_Opening;
         // 
         // addVertexToolStripMenuItem
         // 
@@ -189,6 +190,7 @@ partial class MainForm
         addupdateLengthConstraintToolStripMenuItem.Name = "addupdateLengthConstraintToolStripMenuItem";
         addupdateLengthConstraintToolStripMenuItem.Size = new Size(231, 22);
         addupdateLengthConstraintToolStripMenuItem.Text = "Add/update length constraint";
+        addupdateLengthConstraintToolStripMenuItem.Click += addLengthConstraint;
         // 
         // addParallelConstraintToolStripMenuItem
         // 

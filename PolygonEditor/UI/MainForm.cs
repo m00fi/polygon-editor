@@ -248,4 +248,70 @@ public partial class MainForm : Form
             UpdateStatus("Vertex added at edge midpoint.");
         }
     }
+
+    private void edgeContexMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        Edge? edge = _menuHit.Edge;
+        if (edge is null)
+        {
+            e.Cancel = true;
+            return;
+        }
+        bool hasLength = _scene.Constraints.HasLength(edge);
+        bool hasParallel = _scene.Constraints.HasParallel(edge);
+        removeLengthConstraintToolStripMenuItem.Enabled = hasLength;
+        removeParallelConstraintToolStripMenuItem.Enabled = hasParallel;
+    }
+
+    private static bool TryAskLength(float defaultLength, out float length)
+    {
+        length = defaultLength;
+
+        using var dialog = new Form
+        {
+            Text = "Length constraint",
+            FormBorderStyle = FormBorderStyle.FixedDialog,
+            StartPosition = FormStartPosition.CenterParent,
+            ClientSize = new Size(260, 100),
+            MaximizeBox = false,
+            MinimizeBox = false
+        };
+
+        var label = new Label { Text = "Length:", Left = 12, Top = 15, AutoSize = true };
+        var box = new TextBox
+        {
+            Left = 80,
+            Top = 12,
+            Width = 160,
+            Text = defaultLength.ToString("0.##")
+        };
+        var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 80, Top = 50, Width = 75 };
+        var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Left = 165, Top = 50, Width = 75 };
+
+        dialog.Controls.AddRange([label, box, ok, cancel]);
+        dialog.AcceptButton = ok;
+        dialog.CancelButton = cancel;
+
+        if (dialog.ShowDialog() != DialogResult.OK)
+            return false;
+
+        return float.TryParse(box.Text, out length) && length >= 1f;
+    }
+
+    private void addLengthConstraint(object sender, EventArgs e)
+    {
+        var hit = _menuHit;
+        float length;
+        if(hit.Edge != null && TryAskLength(100, out length))
+        {
+            _scene.Constraints.AddConstraint(new LengthConstraint(hit.Edge, length));
+            _solver.Solve(_scene.Constraints, new ConstraintAnchor());
+            canvasPanel.Invalidate();
+            UpdateStatus($"Length constraint set to {length:0.##}.");
+        }
+        else
+        {
+            UpdateStatus("Length constraint cancelled or invalid.");
+        }
+    }
 }

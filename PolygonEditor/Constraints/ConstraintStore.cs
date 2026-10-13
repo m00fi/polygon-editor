@@ -18,21 +18,24 @@ public sealed class ConstraintStore
 
     public void AddConstraint(IConstraint constraint)
     {
-        if(constraints.Exists(c => c.InvolvedEdges == constraint.InvolvedEdges && c.GetType() == constraint.GetType()))
+        ArgumentNullException.ThrowIfNull(constraint);
+        if (constraint is LengthConstraint length)
         {
-            // Ograniczenie tego samego typu dla tych samych krawędzi już istnieje
-
-            var existingConstraint = constraints.Find(c => c.InvolvedEdges == constraint.InvolvedEdges && c.GetType() == constraint.GetType());
-            if(existingConstraint != null)
-            {
-                RemoveConstraint(existingConstraint);
-                AddConstraint(constraint);
-            }
+            // Usuń poprzedni Length na tej samej krawędzi
+            constraints.RemoveAll(c => c is LengthConstraint lc && lc.Edge == length.Edge);
+            constraints.Add(length);
+            return;
         }
-        else
+        if (constraint is ParallelConstraint parallel)
         {
-            constraints.Add(constraint);
+            constraints.RemoveAll(c =>
+                c is ParallelConstraint pc
+                && ((pc.Edge1 == parallel.Edge1 && pc.Edge2 == parallel.Edge2)
+                    || (pc.Edge1 == parallel.Edge2 && pc.Edge2 == parallel.Edge1)));
+            constraints.Add(parallel);
+            return;
         }
+        constraints.Add(constraint);
     }
     
     public void RemoveConstraint(IConstraint constraint)
@@ -44,4 +47,9 @@ public sealed class ConstraintStore
     {
         constraints.RemoveAll(c => c.InvolvesEdge(edge));
     }
+    public bool HasLength(Edge edge) =>
+    constraints.Exists(c => c is LengthConstraint && c.InvolvesEdge(edge));
+
+    public bool HasParallel(Edge edge) =>
+        constraints.Exists(c => c is ParallelConstraint && c.InvolvesEdge(edge));
 }
