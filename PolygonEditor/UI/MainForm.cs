@@ -19,6 +19,8 @@ public partial class MainForm : Form
 
     private ConstraintSolver _solver = new ConstraintSolver();
     private HitResult _menuHit = HitResult.None;
+    private bool _isRemovingParallelConstraint = false;
+    private bool _isAddingParallelConstraint = false;
 
     public MainForm()
     {
@@ -95,6 +97,42 @@ public partial class MainForm : Form
         var ipoint = new Point(e.X, e.Y);
         HitResult hit = HitTester.HitTest(_scene, point);
 
+        if (_isRemovingParallelConstraint)
+        {
+            if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
+            {
+                var menuHit = _menuHit;
+                if (menuHit.Edge is null)
+                    throw new InvalidOperationException("Menu hit edge is null while removing parallel constraint.");
+
+                _isRemovingParallelConstraint = false;
+                _scene.Constraints.RemoveParallelConstraint(menuHit.Edge, hit.Edge);
+                _solver.Solve(_scene.Constraints, new ConstraintAnchor());
+                canvasPanel.Invalidate();
+                UpdateStatus("Parallel constraint removed.");
+            }
+            return;
+        }
+
+        if(_isAddingParallelConstraint)
+        {
+            if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
+            {
+                var menuHit = _menuHit;
+                if (menuHit.Edge is null)
+                    throw new InvalidOperationException("Menu hit edge is null while adding parallel constraint.");
+
+                _isAddingParallelConstraint = false;
+                _scene.Constraints.AddConstraint(new ParallelConstraint(menuHit.Edge, hit.Edge));
+                _solver.Solve(_scene.Constraints, new ConstraintAnchor());
+                canvasPanel.Invalidate();
+                UpdateStatus("Parallel constraint added.");
+            }
+            return;
+        }
+
+
+
         if (e.Button == MouseButtons.Right)
         {
             HandleRightClick(hit, ipoint);
@@ -109,6 +147,7 @@ public partial class MainForm : Form
         _dragKind = HitKind.None;
         _dragVertex = null;
         _dragPolygon = null;
+
 
         if (hit.Kind == HitKind.Vertex && hit.Vertex is not null)
         {
@@ -302,7 +341,7 @@ public partial class MainForm : Form
     {
         var hit = _menuHit;
         float length;
-        if(hit.Edge != null && TryAskLength(100, out length))
+        if (hit.Edge != null && TryAskLength(100, out length))
         {
             _scene.Constraints.AddConstraint(new LengthConstraint(hit.Edge, length));
             _solver.Solve(_scene.Constraints, new ConstraintAnchor());
@@ -313,5 +352,28 @@ public partial class MainForm : Form
         {
             UpdateStatus("Length constraint cancelled or invalid.");
         }
+    }
+
+    private void removeLength(object sender, EventArgs e)
+    {
+        var hit = _menuHit;
+        if (hit.Edge != null)
+        {
+            _scene.Constraints.RemoveLengthConstraint(hit.Edge);
+            canvasPanel.Invalidate();
+            UpdateStatus("Length constraint removed.");
+        }
+    }
+
+    private void removeParallel(object sender, EventArgs e)
+    {
+        UpdateStatus("Select second edge for parallel constraint (Left-click to select).");
+        _isRemovingParallelConstraint = true;
+    }
+
+    private void addParallel(object sender, EventArgs e)
+    {
+        UpdateStatus("Select second edge for parallel constraint (Left-click to select).");
+        _isAddingParallelConstraint = true;
     }
 }

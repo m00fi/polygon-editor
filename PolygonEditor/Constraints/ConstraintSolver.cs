@@ -10,9 +10,12 @@ internal class ConstraintSolver
 
     public void Solve(ConstraintStore store, ConstraintAnchor anchor)
     {
-        foreach (var constraint in store.Constraints)
+        for(int i = 0; i < 30; i++)
         {
-            constraint.Satisfy(anchor);
+            foreach (var constraint in store.Constraints)
+            {
+                constraint.Satisfy(anchor);
+            }
         }
     }
 }

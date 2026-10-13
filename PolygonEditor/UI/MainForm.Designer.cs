@@ -197,18 +197,21 @@ partial class MainForm
         addParallelConstraintToolStripMenuItem.Name = "addParallelConstraintToolStripMenuItem";
         addParallelConstraintToolStripMenuItem.Size = new Size(231, 22);
         addParallelConstraintToolStripMenuItem.Text = "Add parallel constraint";
+        addParallelConstraintToolStripMenuItem.Click += addParallel;
         // 
         // removeLengthConstraintToolStripMenuItem
         // 
         removeLengthConstraintToolStripMenuItem.Name = "removeLengthConstraintToolStripMenuItem";
         removeLengthConstraintToolStripMenuItem.Size = new Size(231, 22);
         removeLengthConstraintToolStripMenuItem.Text = "Remove length constraint";
+        removeLengthConstraintToolStripMenuItem.Click += removeLength;
         // 
         // removeParallelConstraintToolStripMenuItem
         // 
         removeParallelConstraintToolStripMenuItem.Name = "removeParallelConstraintToolStripMenuItem";
         removeParallelConstraintToolStripMenuItem.Size = new Size(231, 22);
         removeParallelConstraintToolStripMenuItem.Text = "Remove parallel constraint";
+        removeParallelConstraintToolStripMenuItem.Click += removeParallel;
         // 
         // MainForm
         // 

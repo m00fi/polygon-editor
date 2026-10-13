@@ -47,6 +47,20 @@ public sealed class ConstraintStore
     {
         constraints.RemoveAll(c => c.InvolvesEdge(edge));
     }
+
+    public void RemoveLengthConstraint(Edge edge)
+    {
+        constraints.RemoveAll(c => c is LengthConstraint lc && lc.Edge == edge);
+    }
+
+    public void RemoveParallelConstraint(Edge edge1, Edge edge2)
+    {
+        constraints.RemoveAll(c =>
+            c is ParallelConstraint pc
+            && ((pc.Edge1 == edge1 && pc.Edge2 == edge2)
+                || (pc.Edge1 == edge2 && pc.Edge2 == edge1)));
+    }
+
     public bool HasLength(Edge edge) =>
     constraints.Exists(c => c is LengthConstraint && c.InvolvesEdge(edge));
 
