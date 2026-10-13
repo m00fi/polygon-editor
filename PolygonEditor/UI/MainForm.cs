@@ -18,6 +18,7 @@ public partial class MainForm : Form
     private PointF _lastMouse;
 
     private ConstraintSolver _solver = new ConstraintSolver();
+    private HitResult _menuHit = HitResult.None;
 
     public MainForm()
     {
@@ -91,11 +92,12 @@ public partial class MainForm : Form
     private void CanvasPanel_MouseDown(object? sender, MouseEventArgs e)
     {
         var point = new PointF(e.X, e.Y);
+        var ipoint = new Point(e.X, e.Y);
         HitResult hit = HitTester.HitTest(_scene, point);
 
         if (e.Button == MouseButtons.Right)
         {
-            HandleRightClick(hit);
+            HandleRightClick(hit, ipoint);
             return;
         }
 
@@ -132,39 +134,22 @@ public partial class MainForm : Form
         }
     }
 
-    private void HandleRightClick(HitResult hit)
+    private void HandleRightClick(HitResult hit, Point hitPoint)
     {
+        _menuHit = hit;
         if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
         {
-            _scene.Constraints.RemoveAllInvolvingEdge(hit.Edge);
-            hit.Polygon.InsertVertexAtMidpoint(hit.Edge);
-            canvasPanel.Invalidate();
-            UpdateStatus("Vertex added at edge midpoint.");
+            edgeContexMenu.Show(canvasPanel, hitPoint);
             return;
         }
 
         if (hit.Kind == HitKind.Vertex && hit.Polygon is not null && hit.Vertex is not null)
         {
-            if (hit.Polygon.CanRemoveVertex(hit.Vertex))
-            {
-                var edgesInvolved = hit.Polygon.EdgesAffectedByVertexRemoval(hit.Vertex);
-
-                foreach (var edge in edgesInvolved)
-                    _scene.Constraints.RemoveAllInvolvingEdge(edge);
-                
-                hit.Polygon.RemoveVertex(hit.Vertex);
-                canvasPanel.Invalidate();
-                UpdateStatus("Vertex deleted.");
-            }
-            else
-            {
-                UpdateStatus("Cannot delete vertex - polygon must keep at least 3 vertices.");
-            }
-
+            vertexContextMenu.Show(canvasPanel, hitPoint);
             return;
         }
 
-        UpdateStatus("RMB: click an edge to add a vertex, or a vertex to delete it.");
+        UpdateStatus("RMB: click an edge or a vertex to modify it.");
     }
 
     private void CanvasPanel_MouseMove(object? sender, MouseEventArgs e)
@@ -225,5 +210,42 @@ public partial class MainForm : Form
     private void UpdateStatus(string message)
     {
         statusLabel.Text = message;
+    }
+
+    private void removeVertex(object sender, EventArgs e)
+    {
+        var hit = _menuHit;
+
+        if (hit.Kind == HitKind.Vertex && hit.Polygon is not null && hit.Vertex is not null)
+        {
+            if (hit.Polygon.CanRemoveVertex(hit.Vertex))
+            {
+                var edgesInvolved = hit.Polygon.EdgesAffectedByVertexRemoval(hit.Vertex);
+
+                foreach (var edge in edgesInvolved)
+                    _scene.Constraints.RemoveAllInvolvingEdge(edge);
+
+                hit.Polygon.RemoveVertex(hit.Vertex);
+                canvasPanel.Invalidate();
+                UpdateStatus("Vertex deleted.");
+            }
+            else
+            {
+                UpdateStatus("Cannot delete vertex - polygon must keep at least 3 vertices.");
+            }
+        }
+    }
+
+    private void addVertex(object sender, EventArgs e)
+    {
+        var hit = _menuHit;
+
+        if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
+        {
+            _scene.Constraints.RemoveAllInvolvingEdge(hit.Edge);
+            hit.Polygon.InsertVertexAtMidpoint(hit.Edge);
+            canvasPanel.Invalidate();
+            UpdateStatus("Vertex added at edge midpoint.");
+        }
     }
 }

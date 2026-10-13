@@ -17,6 +17,7 @@ partial class MainForm
 
     private void InitializeComponent()
     {
+        components = new System.ComponentModel.Container();
         menuStrip = new MenuStrip();
         menuScene = new ToolStripMenuItem();
         menuResetScene = new ToolStripMenuItem();
@@ -29,10 +30,20 @@ partial class MainForm
         canvasPanel = new CanvasPanel();
         statusStrip = new StatusStrip();
         statusLabel = new ToolStripStatusLabel();
+        vertexContextMenu = new ContextMenuStrip(components);
+        removeVertexToolStripMenuItem = new ToolStripMenuItem();
+        edgeContexMenu = new ContextMenuStrip(components);
+        addVertexToolStripMenuItem = new ToolStripMenuItem();
+        addupdateLengthConstraintToolStripMenuItem = new ToolStripMenuItem();
+        addParallelConstraintToolStripMenuItem = new ToolStripMenuItem();
+        removeLengthConstraintToolStripMenuItem = new ToolStripMenuItem();
+        removeParallelConstraintToolStripMenuItem = new ToolStripMenuItem();
         menuStrip.SuspendLayout();
         toolPanel.SuspendLayout();
         groupDrawing.SuspendLayout();
         statusStrip.SuspendLayout();
+        vertexContextMenu.SuspendLayout();
+        edgeContexMenu.SuspendLayout();
         SuspendLayout();
         // 
         // menuStrip
@@ -70,7 +81,7 @@ partial class MainForm
         // 
         menuHelp.Name = "menuHelp";
         menuHelp.ShortcutKeys = Keys.F1;
-        menuHelp.Size = new Size(170, 22);
+        menuHelp.Size = new Size(176, 22);
         menuHelp.Text = "Documentation";
         menuHelp.Click += MenuHelp_Click;
         // 
@@ -101,7 +112,7 @@ partial class MainForm
         radioBresenham.Checked = true;
         radioBresenham.Location = new Point(12, 20);
         radioBresenham.Name = "radioBresenham";
-        radioBresenham.Size = new Size(131, 19);
+        radioBresenham.Size = new Size(135, 19);
         radioBresenham.TabIndex = 0;
         radioBresenham.TabStop = true;
         radioBresenham.Text = "Bresenham (custom)";
@@ -113,7 +124,7 @@ partial class MainForm
         radioLibrary.AutoSize = true;
         radioLibrary.Location = new Point(150, 20);
         radioLibrary.Name = "radioLibrary";
-        radioLibrary.Size = new Size(146, 19);
+        radioLibrary.Size = new Size(118, 19);
         radioLibrary.TabIndex = 1;
         radioLibrary.Text = "Library (Graphics)";
         radioLibrary.UseVisualStyleBackColor = true;
@@ -147,6 +158,56 @@ partial class MainForm
         statusLabel.Text = "Ready";
         statusLabel.TextAlign = ContentAlignment.MiddleLeft;
         // 
+        // vertexContextMenu
+        // 
+        vertexContextMenu.Items.AddRange(new ToolStripItem[] { removeVertexToolStripMenuItem });
+        vertexContextMenu.Name = "vertexContextMenu";
+        vertexContextMenu.Size = new Size(153, 26);
+        // 
+        // removeVertexToolStripMenuItem
+        // 
+        removeVertexToolStripMenuItem.Name = "removeVertexToolStripMenuItem";
+        removeVertexToolStripMenuItem.Size = new Size(152, 22);
+        removeVertexToolStripMenuItem.Text = "Remove vertex";
+        removeVertexToolStripMenuItem.Click += removeVertex;
+        // 
+        // edgeContexMenu
+        // 
+        edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem });
+        edgeContexMenu.Name = "edgeContexMenu";
+        edgeContexMenu.Size = new Size(232, 114);
+        // 
+        // addVertexToolStripMenuItem
+        // 
+        addVertexToolStripMenuItem.Name = "addVertexToolStripMenuItem";
+        addVertexToolStripMenuItem.Size = new Size(231, 22);
+        addVertexToolStripMenuItem.Text = "Add vertex";
+        addVertexToolStripMenuItem.Click += addVertex;
+        // 
+        // addupdateLengthConstraintToolStripMenuItem
+        // 
+        addupdateLengthConstraintToolStripMenuItem.Name = "addupdateLengthConstraintToolStripMenuItem";
+        addupdateLengthConstraintToolStripMenuItem.Size = new Size(231, 22);
+        addupdateLengthConstraintToolStripMenuItem.Text = "Add/update length constraint";
+        // 
+        // addParallelConstraintToolStripMenuItem
+        // 
+        addParallelConstraintToolStripMenuItem.Name = "addParallelConstraintToolStripMenuItem";
+        addParallelConstraintToolStripMenuItem.Size = new Size(231, 22);
+        addParallelConstraintToolStripMenuItem.Text = "Add parallel constraint";
+        // 
+        // removeLengthConstraintToolStripMenuItem
+        // 
+        removeLengthConstraintToolStripMenuItem.Name = "removeLengthConstraintToolStripMenuItem";
+        removeLengthConstraintToolStripMenuItem.Size = new Size(231, 22);
+        removeLengthConstraintToolStripMenuItem.Text = "Remove length constraint";
+        // 
+        // removeParallelConstraintToolStripMenuItem
+        // 
+        removeParallelConstraintToolStripMenuItem.Name = "removeParallelConstraintToolStripMenuItem";
+        removeParallelConstraintToolStripMenuItem.Size = new Size(231, 22);
+        removeParallelConstraintToolStripMenuItem.Text = "Remove parallel constraint";
+        // 
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
@@ -168,6 +229,8 @@ partial class MainForm
         groupDrawing.PerformLayout();
         statusStrip.ResumeLayout(false);
         statusStrip.PerformLayout();
+        vertexContextMenu.ResumeLayout(false);
+        edgeContexMenu.ResumeLayout(false);
         ResumeLayout(false);
         PerformLayout();
     }
@@ -186,4 +249,12 @@ partial class MainForm
     private CanvasPanel canvasPanel;
     private StatusStrip statusStrip;
     private ToolStripStatusLabel statusLabel;
+    private ContextMenuStrip vertexContextMenu;
+    private ToolStripMenuItem removeVertexToolStripMenuItem;
+    private ContextMenuStrip edgeContexMenu;
+    private ToolStripMenuItem addVertexToolStripMenuItem;
+    private ToolStripMenuItem addupdateLengthConstraintToolStripMenuItem;
+    private ToolStripMenuItem addParallelConstraintToolStripMenuItem;
+    private ToolStripMenuItem removeLengthConstraintToolStripMenuItem;
+    private ToolStripMenuItem removeParallelConstraintToolStripMenuItem;
 }
