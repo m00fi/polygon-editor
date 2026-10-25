@@ -22,5 +22,6 @@ namespace PolygonEditor.Constraints
     {
         public Vertex? FixedVertex { get; init; }
         public Edge? FixedEdge { get; init; }
+        public ControlPoint? FixedControlPoint { get; init; }
     }
 }

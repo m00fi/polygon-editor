@@ -9,23 +9,30 @@ public sealed class SolveContext
     public const int Unreachable = int.MaxValue;
 
     private readonly Dictionary<Vertex, int> _ranks;
+    private readonly ControlPoint? _fixedControlPoint;
 
-    private SolveContext(Dictionary<Vertex, int> ranks)
+    private SolveContext(Dictionary<Vertex, int> ranks, ControlPoint? fixedControlPoint)
     {
         _ranks = ranks;
+        _fixedControlPoint = fixedControlPoint;
     }
 
     public int RankOf(Vertex vertex) => _ranks.TryGetValue(vertex, out int rank) ? rank : Unreachable;
 
     public bool IsFixed(Vertex vertex) => RankOf(vertex) == 0;
 
-    public static SolveContext Build(ConstraintStore store, ConstraintAnchor anchor)
+    // Punkt kontrolny jest nieruchomy tylko jako kotwica (przeciągany); pozostałe są najluźniejsze.
+    public bool IsFixed(ControlPoint controlPoint) => controlPoint == _fixedControlPoint;
+
+    public static SolveContext Build(IReadOnlyList<IConstraint> constraints, ConstraintAnchor anchor)
     {
-        Dictionary<Vertex, List<Vertex>> links = BuildConstraintLinks(store);
+        Dictionary<Vertex, List<Vertex>> links = BuildConstraintLinks(constraints);
         var ranks = new Dictionary<Vertex, int>();
         var queue = new Queue<Vertex>();
 
-        foreach (Vertex? seed in new[] { anchor.FixedVertex, anchor.FixedEdge?.Start, anchor.FixedEdge?.End })
+        // Przy przeciąganiu punktu kontrolnego oba wierzchołki jego segmentu stoją w miejscu.
+        Edge? fixedEdge = anchor.FixedEdge ?? anchor.FixedControlPoint?.Edge;
+        foreach (Vertex? seed in new[] { anchor.FixedVertex, fixedEdge?.Start, fixedEdge?.End })
         {
             if (seed is not null && ranks.TryAdd(seed, 0))
                 queue.Enqueue(seed);
@@ -42,7 +49,7 @@ public sealed class SolveContext
             }
         }
 
-        return new SolveContext(ranks);
+        return new SolveContext(ranks, anchor.FixedControlPoint);
     }
 
     private static IEnumerable<Vertex> Neighbours(Vertex vertex, Dictionary<Vertex, List<Vertex>> links)
@@ -59,10 +66,10 @@ public sealed class SolveContext
     }
 
     // Łączy wierzchołki krawędzi występujących we wspólnym ograniczeniu (np. równoległość między wielokątami).
-    private static Dictionary<Vertex, List<Vertex>> BuildConstraintLinks(ConstraintStore store)
+    private static Dictionary<Vertex, List<Vertex>> BuildConstraintLinks(IReadOnlyList<IConstraint> constraints)
     {
         var links = new Dictionary<Vertex, List<Vertex>>();
-        foreach (IConstraint constraint in store.Constraints)
+        foreach (IConstraint constraint in constraints)
         {
             if (constraint.InvolvedEdges.Count < 2)
                 continue;

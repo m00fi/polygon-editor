@@ -8,7 +8,7 @@ public sealed class SceneSnapshot
     private readonly ConstraintStore _store;
     private readonly List<IConstraint> _constraints;
     private readonly List<(Vertex Vertex, PointF Position)> _vertices = [];
-    private readonly List<(ControlPoint ControlPoint, PointF Position)> _controlPoints = [];
+    private readonly List<(ControlPoint ControlPoint, PointF Offset)> _controlPoints = [];
 
     private SceneSnapshot(ConstraintStore store)
     {
@@ -25,42 +25,20 @@ public sealed class SceneSnapshot
                 snapshot._vertices.Add((vertex, vertex.Position));
             foreach (Edge edge in polygon.Edges)
             {
-                snapshot._controlPoints.Add((edge.Control1, edge.Control1.Position));
-                snapshot._controlPoints.Add((edge.Control2, edge.Control2.Position));
+                snapshot._controlPoints.Add((edge.Control1, edge.Control1.Offset));
+                snapshot._controlPoints.Add((edge.Control2, edge.Control2.Offset));
             }
         }
 
         return snapshot;
     }
 
-    // Przesuwa punkty kontrolne Béziera o przesunięcie ich wierzchołka od chwili snapshotu
-    // (Control1 należy do Start, Control2 do End), więc kształt krzywej przy wierzchołku się nie zmienia.
-    public void MoveControlPointsWithVertices()
-    {
-        var previous = new Dictionary<Vertex, PointF>();
-        foreach ((Vertex vertex, PointF position) in _vertices)
-            previous[vertex] = position;
-
-        foreach ((ControlPoint controlPoint, _) in _controlPoints)
-        {
-            Edge edge = controlPoint.Edge;
-            if (!edge.IsBezier)
-                continue;
-
-            Vertex owner = controlPoint == edge.Control1 ? edge.Start : edge.End;
-            if (!previous.TryGetValue(owner, out PointF old))
-                continue;
-
-            controlPoint.Translate(owner.Position.X - old.X, owner.Position.Y - old.Y);
-        }
-    }
-
     public void Restore()
     {
         foreach ((Vertex vertex, PointF position) in _vertices)
             vertex.Position = position;
-        foreach ((ControlPoint controlPoint, PointF position) in _controlPoints)
-            controlPoint.Position = position;
+        foreach ((ControlPoint controlPoint, PointF offset) in _controlPoints)
+            controlPoint.Offset = offset;
 
         _store.RestoreFrom(_constraints);
     }

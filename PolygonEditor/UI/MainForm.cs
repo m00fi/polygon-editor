@@ -276,27 +276,30 @@ public partial class MainForm : Form
         UpdateStatus("Ready.");
     }
 
-    // Punkt kontrolny zawsze podąża za kursorem; wierzchołki segmentu stoją w miejscu.
-    // Wymuszanie ciągłości G1/C1 po drugiej stronie wierzchołka dojdzie w solverze (krok 6).
-    private static void DragControlPointTo(ControlPoint controlPoint, PointF point)
+    // Punkt kontrolny jest kotwicą, a wierzchołki jego segmentu stoją w miejscu; ciągłość G1/C1
+    // przesuwa uchwyt po drugiej stronie wierzchołka. Gdy ograniczeń nie da się spełnić, ruch jest wycofywany.
+    private void DragControlPointTo(ControlPoint controlPoint, PointF point)
     {
+        SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
+
         controlPoint.Position = point;
+        if (_solver.Solve(_scene, new ConstraintAnchor { FixedControlPoint = controlPoint }))
+            return;
+
+        snapshot.Restore();
+        UpdateStatus("Control point cannot move there - constraints cannot be satisfied.");
     }
 
     // Gdy ograniczeń nie da się spełnić, ruch jest wycofywany i przesuwany jest cały wielokąt
-    // (translacja zachowuje długości i kierunki krawędzi).
+    // (translacja zachowuje długości, kierunki i ciągłość).
     private void DragVertexTo(Vertex vertex, Models.Polygon polygon, PointF point)
     {
         SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
         PointF previous = vertex.Position;
 
         vertex.Position = point;
-        if (_solver.Solve(_scene.Constraints, new ConstraintAnchor { FixedVertex = vertex }))
-        {
-            // Dotyczy też wierzchołków przesuniętych przez solver.
-            snapshot.MoveControlPointsWithVertices();
+        if (_solver.Solve(_scene, new ConstraintAnchor { FixedVertex = vertex }))
             return;
-        }
 
         snapshot.Restore();
         polygon.Translate(point.X - previous.X, point.Y - previous.Y);
@@ -309,7 +312,7 @@ public partial class MainForm : Form
         SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
         _scene.Constraints.AddConstraint(constraint);
 
-        bool solved = _solver.Solve(_scene.Constraints, anchor);
+        bool solved = _solver.Solve(_scene, anchor);
         if (!solved)
             snapshot.Restore();
 
@@ -415,9 +418,24 @@ public partial class MainForm : Form
         if (vertex is null)
             return;
 
+        SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
+        Continuity previous = vertex.Continuity;
+        bool previousUserSet = vertex.ContinuityUserSet;
+
         vertex.SetContinuityByUser(continuity);
+        if (_solver.Solve(_scene, new ConstraintAnchor { FixedVertex = vertex }))
+        {
+            UpdateStatus($"Continuity set to {continuity}.");
+        }
+        else
+        {
+            snapshot.Restore();
+            vertex.Continuity = previous;
+            vertex.ContinuityUserSet = previousUserSet;
+            UpdateStatus($"Continuity {continuity} conflicts with existing constraints.");
+        }
+
         canvasPanel.Invalidate();
-        UpdateStatus($"Continuity set to {continuity}.");
     }
 
     private void setLineEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.Line, "Edge changed to a line segment.");
@@ -430,8 +448,21 @@ public partial class MainForm : Form
         if (edge is null || edge.Kind == kind)
             return;
 
+        SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
+        EdgeKind previous = edge.Kind;
         bool hadConstraints = _scene.Constraints.Constraints.Any(c => c.InvolvesEdge(edge));
+
+        // Wierzchołki krawędzi stoją; domyślna ciągłość dopasowuje punkty kontrolne do sąsiadów.
         _scene.SetEdgeKind(edge, kind);
+        if (!_solver.Solve(_scene, new ConstraintAnchor { FixedEdge = edge }))
+        {
+            _scene.SetEdgeKind(edge, previous);
+            snapshot.Restore();
+            canvasPanel.Invalidate();
+            UpdateStatus("Edge kind not changed - continuity conflicts with existing constraints.");
+            return;
+        }
+
         canvasPanel.Invalidate();
         UpdateStatus(hadConstraints ? $"{message} Its constraints were removed." : message);
     }

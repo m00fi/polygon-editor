@@ -17,8 +17,8 @@ public sealed class Edge
     {
         Start = start ?? throw new ArgumentNullException(nameof(start));
         End = end ?? throw new ArgumentNullException(nameof(end));
-        Control1 = new ControlPoint(this, Lerp(start.Position, end.Position, 1f / 3f));
-        Control2 = new ControlPoint(this, Lerp(start.Position, end.Position, 2f / 3f));
+        Control1 = new ControlPoint(this, start, Lerp(start.Position, end.Position, 1f / 3f));
+        Control2 = new ControlPoint(this, end, Lerp(start.Position, end.Position, 2f / 3f));
     }
 
     public bool IsBezier => Kind == EdgeKind.CubicBezier;
@@ -60,12 +60,6 @@ public sealed class Edge
         PointF c2 = Lerp(a, b, 2f / 3f);
         Control1.Position = new PointF(c1.X + offsetX, c1.Y + offsetY);
         Control2.Position = new PointF(c2.X + offsetX, c2.Y + offsetY);
-    }
-
-    public void TranslateControlPoints(float dx, float dy)
-    {
-        Control1.Translate(dx, dy);
-        Control2.Translate(dx, dy);
     }
 
     private static PointF Lerp(PointF a, PointF b, float t) =>

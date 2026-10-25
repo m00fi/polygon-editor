@@ -6,28 +6,30 @@ internal sealed class ConstraintSolver
 {
     public const int MaxIterations = 100;
 
-    // Zwraca true, gdy po rozwiązaniu wszystkie ograniczenia są spełnione.
-    public bool Solve(ConstraintStore store, ConstraintAnchor anchor)
+    // Ograniczenia użytkownika (ConstraintStore) + ciągłość wynikająca z ustawień wierzchołków.
+    // Zwraca true, gdy po rozwiązaniu wszystkie są spełnione.
+    public bool Solve(Models.Scene scene, ConstraintAnchor anchor)
     {
-        if (AllSatisfied(store))
+        List<IConstraint> constraints = [.. scene.Constraints.Constraints, .. ContinuityConstraint.CreateAll(scene)];
+        if (AllSatisfied(constraints))
             return true;
 
-        SolveContext context = SolveContext.Build(store, anchor);
+        SolveContext context = SolveContext.Build(constraints, anchor);
         for (int i = 0; i < MaxIterations; i++)
         {
-            foreach (IConstraint constraint in store.Constraints)
+            foreach (IConstraint constraint in constraints)
                 constraint.Satisfy(context);
 
-            if (AllSatisfied(store))
+            if (AllSatisfied(constraints))
                 return true;
         }
 
         return false;
     }
 
-    private static bool AllSatisfied(ConstraintStore store)
+    private static bool AllSatisfied(List<IConstraint> constraints)
     {
-        foreach (IConstraint constraint in store.Constraints)
+        foreach (IConstraint constraint in constraints)
         {
             if (!constraint.IsSatisfied())
                 return false;

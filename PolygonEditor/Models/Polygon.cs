@@ -31,14 +31,11 @@ public sealed class Polygon
 
     public static Polygon FromPoints(params PointF[] points) => FromPoints((IReadOnlyList<PointF>)points);
 
-    // Przesuwa wszystkie wierzchołki i punkty kontrolne.
+    // Punkty kontrolne są zapisane względem wierzchołków, więc przesuwają się razem z nimi.
     public void Translate(float dx, float dy)
     {
         foreach (Vertex vertex in _vertices)
             vertex.Translate(dx, dy);
-
-        foreach (Edge edge in _edges)
-            edge.TranslateControlPoints(dx, dy);
     }
 
     // Wzór shoelace. Przy osi Y w dół wynik > 0 oznacza obieg zgodny z ruchem wskazówek zegara na ekranie.
