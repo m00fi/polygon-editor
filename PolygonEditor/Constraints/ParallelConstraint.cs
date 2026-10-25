@@ -29,6 +29,12 @@ public sealed class ParallelConstraint : IConstraint
             return false;
         }
 
+        if (edge1.Kind != EdgeKind.Line || edge2.Kind != EdgeKind.Line)
+        {
+            reason = "Only straight edges can be parallel.";
+            return false;
+        }
+
         if (AreAdjacent(edge1, edge2))
         {
             reason = "Adjacent edges (sharing a vertex) cannot be parallel.";

@@ -310,14 +310,8 @@ public partial class MainForm : Form
 
         if (hit.Kind == HitKind.Vertex && hit.Polygon is not null && hit.Vertex is not null)
         {
-            if (hit.Polygon.CanRemoveVertex(hit.Vertex))
+            if (_scene.RemoveVertex(hit.Polygon, hit.Vertex))
             {
-                var edgesInvolved = hit.Polygon.EdgesAffectedByVertexRemoval(hit.Vertex);
-
-                foreach (var edge in edgesInvolved)
-                    _scene.Constraints.RemoveAllInvolvingEdge(edge);
-
-                hit.Polygon.RemoveVertex(hit.Vertex);
                 canvasPanel.Invalidate();
                 UpdateStatus("Vertex deleted.");
             }
@@ -334,8 +328,7 @@ public partial class MainForm : Form
 
         if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
         {
-            _scene.Constraints.RemoveAllInvolvingEdge(hit.Edge);
-            hit.Polygon.InsertVertexAtMidpoint(hit.Edge);
+            _scene.InsertVertex(hit.Polygon, hit.Edge);
             canvasPanel.Invalidate();
             UpdateStatus("Vertex added at edge midpoint.");
         }
@@ -351,8 +344,29 @@ public partial class MainForm : Form
         }
         bool hasLength = _scene.Constraints.HasLength(edge);
         bool hasParallel = _scene.Constraints.HasParallel(edge);
+        bool isLine = edge.Kind == EdgeKind.Line;
+        addupdateLengthConstraintToolStripMenuItem.Enabled = isLine;
+        addParallelConstraintToolStripMenuItem.Enabled = isLine;
         removeLengthConstraintToolStripMenuItem.Enabled = hasLength;
         removeParallelConstraintToolStripMenuItem.Enabled = hasParallel;
+        lineEdgeToolStripMenuItem.Checked = isLine;
+        bezierEdgeToolStripMenuItem.Checked = edge.Kind == EdgeKind.CubicBezier;
+    }
+
+    private void setLineEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.Line, "Edge changed to a line segment.");
+
+    private void setBezierEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.CubicBezier, "Edge changed to a Bézier curve.");
+
+    private void ChangeEdgeKind(EdgeKind kind, string message)
+    {
+        Edge? edge = _menuHit.Edge;
+        if (edge is null || edge.Kind == kind)
+            return;
+
+        bool hadConstraints = _scene.Constraints.Constraints.Any(c => c.InvolvesEdge(edge));
+        _scene.SetEdgeKind(edge, kind);
+        canvasPanel.Invalidate();
+        UpdateStatus(hadConstraints ? $"{message} Its constraints were removed." : message);
     }
 
     private static bool TryAskLength(float defaultLength, out float length)

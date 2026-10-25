@@ -38,6 +38,9 @@ partial class MainForm
         addParallelConstraintToolStripMenuItem = new ToolStripMenuItem();
         removeLengthConstraintToolStripMenuItem = new ToolStripMenuItem();
         removeParallelConstraintToolStripMenuItem = new ToolStripMenuItem();
+        edgeKindSeparator = new ToolStripSeparator();
+        lineEdgeToolStripMenuItem = new ToolStripMenuItem();
+        bezierEdgeToolStripMenuItem = new ToolStripMenuItem();
         menuStrip.SuspendLayout();
         toolPanel.SuspendLayout();
         groupDrawing.SuspendLayout();
@@ -173,9 +176,9 @@ partial class MainForm
         // 
         // edgeContexMenu
         // 
-        edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem });
+        edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem, edgeKindSeparator, lineEdgeToolStripMenuItem, bezierEdgeToolStripMenuItem });
         edgeContexMenu.Name = "edgeContexMenu";
-        edgeContexMenu.Size = new Size(232, 136);
+        edgeContexMenu.Size = new Size(232, 186);
         edgeContexMenu.Opening += edgeContexMenu_Opening;
         // 
         // addVertexToolStripMenuItem
@@ -212,7 +215,26 @@ partial class MainForm
         removeParallelConstraintToolStripMenuItem.Size = new Size(231, 22);
         removeParallelConstraintToolStripMenuItem.Text = "Remove parallel constraint";
         removeParallelConstraintToolStripMenuItem.Click += removeParallel;
-        // 
+        //
+        // edgeKindSeparator
+        //
+        edgeKindSeparator.Name = "edgeKindSeparator";
+        edgeKindSeparator.Size = new Size(228, 6);
+        //
+        // lineEdgeToolStripMenuItem
+        //
+        lineEdgeToolStripMenuItem.Name = "lineEdgeToolStripMenuItem";
+        lineEdgeToolStripMenuItem.Size = new Size(231, 22);
+        lineEdgeToolStripMenuItem.Text = "Line segment";
+        lineEdgeToolStripMenuItem.Click += setLineEdge;
+        //
+        // bezierEdgeToolStripMenuItem
+        //
+        bezierEdgeToolStripMenuItem.Name = "bezierEdgeToolStripMenuItem";
+        bezierEdgeToolStripMenuItem.Size = new Size(231, 22);
+        bezierEdgeToolStripMenuItem.Text = "Bézier curve";
+        bezierEdgeToolStripMenuItem.Click += setBezierEdge;
+        //
         // MainForm
         // 
         AutoScaleDimensions = new SizeF(7F, 15F);
@@ -262,4 +284,7 @@ partial class MainForm
     private ToolStripMenuItem addParallelConstraintToolStripMenuItem;
     private ToolStripMenuItem removeLengthConstraintToolStripMenuItem;
     private ToolStripMenuItem removeParallelConstraintToolStripMenuItem;
+    private ToolStripSeparator edgeKindSeparator;
+    private ToolStripMenuItem lineEdgeToolStripMenuItem;
+    private ToolStripMenuItem bezierEdgeToolStripMenuItem;
 }

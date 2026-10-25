@@ -8,7 +8,7 @@ public sealed class SceneSnapshot
     private readonly ConstraintStore _store;
     private readonly List<IConstraint> _constraints;
     private readonly List<(Vertex Vertex, PointF Position)> _vertices = [];
-    private readonly List<(Edge Edge, PointF Control1, PointF Control2)> _edges = [];
+    private readonly List<(ControlPoint ControlPoint, PointF Position)> _controlPoints = [];
 
     private SceneSnapshot(ConstraintStore store)
     {
@@ -24,7 +24,10 @@ public sealed class SceneSnapshot
             foreach (Vertex vertex in polygon.Vertices)
                 snapshot._vertices.Add((vertex, vertex.Position));
             foreach (Edge edge in polygon.Edges)
-                snapshot._edges.Add((edge, edge.Control1, edge.Control2));
+            {
+                snapshot._controlPoints.Add((edge.Control1, edge.Control1.Position));
+                snapshot._controlPoints.Add((edge.Control2, edge.Control2.Position));
+            }
         }
 
         return snapshot;
@@ -34,11 +37,8 @@ public sealed class SceneSnapshot
     {
         foreach ((Vertex vertex, PointF position) in _vertices)
             vertex.Position = position;
-        foreach ((Edge edge, PointF control1, PointF control2) in _edges)
-        {
-            edge.Control1 = control1;
-            edge.Control2 = control2;
-        }
+        foreach ((ControlPoint controlPoint, PointF position) in _controlPoints)
+            controlPoint.Position = position;
 
         _store.RestoreFrom(_constraints);
     }

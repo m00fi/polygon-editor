@@ -1,20 +1,15 @@
 namespace PolygonEditor.Models;
 
-/// <summary>Wierzchołek wielokąta.</summary>
 public sealed class Vertex
 {
     public PointF Position { get; set; }
 
-    /// <summary>Wymagana ciągłość w wierzchołku.</summary>
     public Continuity Continuity { get; set; } = Continuity.G0;
 
-    /// <summary>True, gdy użytkownik sam ustawił ciągłość.</summary>
+    // True, gdy użytkownik sam wybrał ciągłość - wtedy zmiana rodzaju krawędzi jej nie nadpisuje.
     public bool ContinuityUserSet { get; set; }
 
-    /// <summary>Krawędź wchodząca.</summary>
     public Edge? Incoming { get; internal set; }
-
-    /// <summary>Krawędź wychodząca.</summary>
     public Edge? Outgoing { get; internal set; }
 
     public Vertex()
@@ -30,6 +25,11 @@ public sealed class Vertex
     {
         Position = position;
     }
+
+    // Ciągłość ma znaczenie tylko wtedy, gdy co najmniej jedna sąsiednia krawędź nie jest odcinkiem.
+    public bool HasAdjacentCurve =>
+        (Incoming is not null && Incoming.Kind != EdgeKind.Line)
+        || (Outgoing is not null && Outgoing.Kind != EdgeKind.Line);
 
     public void Translate(float dx, float dy)
     {
