@@ -1,6 +1,6 @@
 namespace PolygonEditor.Models;
 
-/// <summary>Zamknięty wielokąt (dopuszczalne samoprzecięcia).</summary>
+// Zamknięty wielokąt (dopuszczalne samoprzecięcia).
 public sealed class Polygon
 {
     private readonly List<Vertex> _vertices = [];
@@ -15,7 +15,6 @@ public sealed class Polygon
     {
     }
 
-    /// <summary>Tworzy wielokąt z co najmniej 3 punktów.</summary>
     public static Polygon FromPoints(IReadOnlyList<PointF> points)
     {
         ArgumentNullException.ThrowIfNull(points);
@@ -32,7 +31,7 @@ public sealed class Polygon
 
     public static Polygon FromPoints(params PointF[] points) => FromPoints((IReadOnlyList<PointF>)points);
 
-    /// <summary>Przesuwa wszystkie wierzchołki i punkty kontrolne.</summary>
+    // Przesuwa wszystkie wierzchołki i punkty kontrolne.
     public void Translate(float dx, float dy)
     {
         foreach (Vertex vertex in _vertices)
@@ -50,7 +49,7 @@ public sealed class Polygon
 
     public int IndexOfEdge(Edge edge) => _edges.IndexOf(edge);
 
-    /// <summary>Dodaje wierzchołek w środku krawędzi (krawędź zostaje zastąpiona dwiema).</summary>
+    // Dodaje wierzchołek w środku krawędzi (krawędź zostaje zastąpiona dwiema).
     public Vertex InsertVertexAtMidpoint(Edge edge)
     {
         int edgeIndex = RequireEdgeIndex(edge);
@@ -81,7 +80,7 @@ public sealed class Polygon
 
     public bool CanRemoveVertex(Vertex vertex) => _vertices.Count > 3 && _vertices.Contains(vertex);
 
-    /// <summary>Usuwa wierzchołek (min. 3 muszą zostać). Zwraca false, gdy usunięcie niemożliwe.</summary>
+    // Zwraca false, gdy w wielokącie zostałyby mniej niż 3 wierzchołki.
     public bool RemoveVertex(Vertex vertex)
     {
         int index = _vertices.IndexOf(vertex);
@@ -107,16 +106,10 @@ public sealed class Polygon
         if (incomingIndex < 0 || outgoingIndex < 0)
             throw new InvalidOperationException("Adjacent edges are missing from the polygon edge list.");
 
-        if (incomingIndex < outgoingIndex)
-        {
-            _edges[incomingIndex] = merged;
-            _edges.RemoveAt(outgoingIndex);
-        }
-        else
-        {
-            _edges[outgoingIndex] = merged;
-            _edges.RemoveAt(incomingIndex);
-        }
+        // Scalona krawędź zawsze zastępuje krawędź wchodzącą, dzięki czemu
+        // Edges[i] nadal zaczyna się w Vertices[i] (także przy usuwaniu wierzchołka 0).
+        _edges[incomingIndex] = merged;
+        _edges.RemoveAt(outgoingIndex);
 
         _vertices.RemoveAt(index);
         vertex.Incoming = null;
@@ -124,7 +117,6 @@ public sealed class Polygon
         return true;
     }
 
-    /// <summary>Krawędzie usuwane przy RemoveVertex (incoming i outgoing).</summary>
     public IEnumerable<Edge> EdgesAffectedByVertexRemoval(Vertex vertex)
     {
         if (vertex.Incoming is not null)

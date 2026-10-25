@@ -2,9 +2,11 @@
 
 namespace PolygonEditor.Constraints;
 
-/// <summary>Ograniczenie równoległości dwóch krawędzi.</summary>
 public sealed class ParallelConstraint : IConstraint
 {
+    // Dopuszczalny |sin| kąta między krawędziami (ok. 0.3°).
+    public const float Tolerance = 0.005f;
+
     public Guid Id { get; } = Guid.NewGuid();
     public Edge Edge1 { get; }
     public Edge Edge2 { get; }
@@ -42,99 +44,89 @@ public sealed class ParallelConstraint : IConstraint
 
     public bool InvolvesEdge(Edge edge) => edge == Edge1 || edge == Edge2;
 
-    public void Satisfy(ConstraintAnchor anchor)
+    public bool IsSatisfied()
     {
-        ResolveEdges(anchor, out Edge fixedEdge, out Edge freeEdge);
-        ResolveVertices(freeEdge, anchor, out Vertex fixedVertex, out Vertex freeVertex);
+        if (!TryGetUnit(Edge1, out float ux1, out float uy1) || !TryGetUnit(Edge2, out float ux2, out float uy2))
+            return true;
 
-        PointF fixedDir = fixedEdge.Direction;
-        float fixedLen = MathF.Sqrt(fixedDir.X * fixedDir.X + fixedDir.Y * fixedDir.Y);
-        if (fixedLen < 1e-4f)
+        return MathF.Abs(ux1 * uy2 - uy1 * ux2) <= Tolerance;
+    }
+
+    public void Satisfy(SolveContext context)
+    {
+        ResolveEdges(context, out Edge fixedEdge, out Edge freeEdge);
+        if (IsFullyFixed(freeEdge, context))
+        {
+            (fixedEdge, freeEdge) = (freeEdge, fixedEdge);
+            if (IsFullyFixed(freeEdge, context))
+                return;
+        }
+
+        if (!TryGetUnit(fixedEdge, out float ux, out float uy))
             return;
 
-        float ux = fixedDir.X / fixedLen;
-        float uy = fixedDir.Y / fixedLen;
-
-        float dx = freeVertex.Position.X - fixedVertex.Position.X;
-        float dy = freeVertex.Position.Y - fixedVertex.Position.Y;
-        float freeLen = MathF.Sqrt(dx * dx + dy * dy);
+        PointF freeDir = freeEdge.Direction;
+        float freeLen = freeEdge.Length;
         if (freeLen < 1e-4f)
             freeLen = 1f;
 
-        // Zachowaj dotychczasowy zwrot free edge, jeśli to możliwe.
-        if (dx * ux + dy * uy < 0f)
+        // Zachowaj dotychczasowy zwrot obracanej krawędzi.
+        if (freeDir.X * ux + freeDir.Y * uy < 0f)
         {
             ux = -ux;
             uy = -uy;
         }
 
-        freeVertex.Position = new PointF(
-            fixedVertex.Position.X + ux * freeLen,
-            fixedVertex.Position.Y + uy * freeLen);
+        Vertex start = freeEdge.Start;
+        Vertex end = freeEdge.End;
+        int startRank = context.RankOf(start);
+        int endRank = context.RankOf(end);
+
+        if (startRank < endRank)
+        {
+            end.Position = new PointF(start.Position.X + ux * freeLen, start.Position.Y + uy * freeLen);
+        }
+        else if (endRank < startRank)
+        {
+            start.Position = new PointF(end.Position.X - ux * freeLen, end.Position.Y - uy * freeLen);
+        }
+        else
+        {
+            // Remis: obrót wokół środka krawędzi.
+            PointF mid = freeEdge.Midpoint;
+            float half = freeLen * 0.5f;
+            start.Position = new PointF(mid.X - ux * half, mid.Y - uy * half);
+            end.Position = new PointF(mid.X + ux * half, mid.Y + uy * half);
+        }
     }
 
-    private void ResolveEdges(ConstraintAnchor anchor, out Edge fixedEdge, out Edge freeEdge)
+    // Nieruchoma jest krawędź bliższa kotwicy (mniejsza ranga, potem suma rang); przy remisie Edge1.
+    private void ResolveEdges(SolveContext context, out Edge fixedEdge, out Edge freeEdge)
     {
-        if (anchor.FixedEdge == Edge1)
-        {
-            fixedEdge = Edge1;
-            freeEdge = Edge2;
-            return;
-        }
+        int min1 = Math.Min(context.RankOf(Edge1.Start), context.RankOf(Edge1.End));
+        int min2 = Math.Min(context.RankOf(Edge2.Start), context.RankOf(Edge2.End));
+        long sum1 = (long)context.RankOf(Edge1.Start) + context.RankOf(Edge1.End);
+        long sum2 = (long)context.RankOf(Edge2.Start) + context.RankOf(Edge2.End);
 
-        if (anchor.FixedEdge == Edge2)
-        {
-            fixedEdge = Edge2;
-            freeEdge = Edge1;
-            return;
-        }
-
-        Vertex? fixedVertex = anchor.FixedVertex;
-        if (fixedVertex is not null)
-        {
-            bool onEdge1 = fixedVertex == Edge1.Start || fixedVertex == Edge1.End;
-            bool onEdge2 = fixedVertex == Edge2.Start || fixedVertex == Edge2.End;
-
-            if (onEdge1 && !onEdge2)
-            {
-                fixedEdge = Edge1;
-                freeEdge = Edge2;
-                return;
-            }
-
-            if (onEdge2 && !onEdge1)
-            {
-                fixedEdge = Edge2;
-                freeEdge = Edge1;
-                return;
-            }
-        }
-
-        fixedEdge = Edge1;
-        freeEdge = Edge2;
+        bool edge2Closer = min2 < min1 || (min2 == min1 && sum2 < sum1);
+        fixedEdge = edge2Closer ? Edge2 : Edge1;
+        freeEdge = edge2Closer ? Edge1 : Edge2;
     }
 
-    private static void ResolveVertices(
-        Edge freeEdge,
-        ConstraintAnchor anchor,
-        out Vertex fixedVertex,
-        out Vertex freeVertex)
+    private static bool IsFullyFixed(Edge edge, SolveContext context) =>
+        context.IsFixed(edge.Start) && context.IsFixed(edge.End);
+
+    private static bool TryGetUnit(Edge edge, out float ux, out float uy)
     {
-        if (anchor.FixedVertex == freeEdge.Start)
+        float len = edge.Length;
+        if (len < 1e-4f)
         {
-            fixedVertex = freeEdge.Start;
-            freeVertex = freeEdge.End;
-            return;
+            ux = uy = 0f;
+            return false;
         }
 
-        if (anchor.FixedVertex == freeEdge.End)
-        {
-            fixedVertex = freeEdge.End;
-            freeVertex = freeEdge.Start;
-            return;
-        }
-
-        fixedVertex = freeEdge.Start;
-        freeVertex = freeEdge.End;
+        ux = edge.Direction.X / len;
+        uy = edge.Direction.Y / len;
+        return true;
     }
 }

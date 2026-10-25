@@ -53,12 +53,24 @@ public sealed class ConstraintStore
         constraints.RemoveAll(c => c is LengthConstraint lc && lc.Edge == edge);
     }
 
-    public void RemoveParallelConstraint(Edge edge1, Edge edge2)
+    // Zwraca true, gdy istniała równoległość między tymi krawędziami.
+    public bool RemoveParallelConstraint(Edge edge1, Edge edge2)
     {
-        constraints.RemoveAll(c =>
+        return constraints.RemoveAll(c =>
             c is ParallelConstraint pc
             && ((pc.Edge1 == edge1 && pc.Edge2 == edge2)
-                || (pc.Edge1 == edge2 && pc.Edge2 == edge1)));
+                || (pc.Edge1 == edge2 && pc.Edge2 == edge1))) > 0;
+    }
+
+    public IReadOnlyList<ParallelConstraint> GetParallelConstraints(Edge edge) =>
+        constraints.OfType<ParallelConstraint>().Where(pc => pc.InvolvesEdge(edge)).ToList();
+
+    public void Clear() => constraints.Clear();
+
+    // Przywraca listę ograniczeń zapamiętaną w SceneSnapshot.
+    internal void RestoreFrom(IEnumerable<IConstraint> saved)
+    {
+        constraints = [.. saved];
     }
 
     public bool HasLength(Edge edge) =>

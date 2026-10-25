@@ -1,7 +1,6 @@
 namespace PolygonEditor.Models;
 using PolygonEditor.Constraints;
 
-/// <summary>Scena z wielokątami na canvasie.</summary>
 public sealed class Scene
 {
     private readonly List<Polygon> _polygons = [];
@@ -24,9 +23,12 @@ public sealed class Scene
 
     public bool Remove(Polygon polygon) => _polygons.Remove(polygon);
 
-    public void Clear() => _polygons.Clear();
+    public void Clear()
+    {
+        _polygons.Clear();
+        _constraintStore.Clear();
+    }
 
-    /// <summary>Szuka wielokąta zawierającego wierzchołek.</summary>
     public Polygon? FindPolygon(Vertex vertex)
     {
         foreach (Polygon polygon in _polygons)
@@ -38,7 +40,6 @@ public sealed class Scene
         return null;
     }
 
-    /// <summary>Szuka wielokąta zawierającego krawędź.</summary>
     public Polygon? FindPolygon(Edge edge)
     {
         foreach (Polygon polygon in _polygons)

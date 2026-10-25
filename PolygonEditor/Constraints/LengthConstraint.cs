@@ -2,9 +2,11 @@
 
 namespace PolygonEditor.Constraints;
 
-/// <summary>Ograniczenie stałej długości krawędzi.</summary>
 public sealed class LengthConstraint : IConstraint
 {
+    // Dopuszczalna różnica długości (px).
+    public const float Tolerance = 0.5f;
+
     public Guid Id { get; } = Guid.NewGuid();
     public Edge Edge { get; }
     public float TargetLength { get; set; }
@@ -19,46 +21,47 @@ public sealed class LengthConstraint : IConstraint
 
     public bool InvolvesEdge(Edge edge) => edge == Edge;
 
-    public void Satisfy(ConstraintAnchor anchor)
+    public bool IsSatisfied() => MathF.Abs(Edge.Length - TargetLength) <= Tolerance;
+
+    public void Satisfy(SolveContext context)
     {
-        Vertex fixedVertex;
-        Vertex freeVertex;
+        Vertex start = Edge.Start;
+        Vertex end = Edge.End;
+        if (context.IsFixed(start) && context.IsFixed(end))
+            return;
 
-        if (anchor.FixedVertex == Edge.Start)
+        float currentLength = Edge.Length;
+        float dirX = 1f;
+        float dirY = 0f;
+        if (currentLength >= 1e-4f)
         {
-            fixedVertex = Edge.Start;
-            freeVertex = Edge.End;
+            dirX = Edge.Direction.X / currentLength;
+            dirY = Edge.Direction.Y / currentLength;
         }
-        else if (anchor.FixedVertex == Edge.End)
+
+        int startRank = context.RankOf(start);
+        int endRank = context.RankOf(end);
+
+        if (startRank < endRank)
         {
-            fixedVertex = Edge.End;
-            freeVertex = Edge.Start;
+            // Start bliżej kotwicy - przesuwamy End wzdłuż krawędzi.
+            end.Position = new PointF(
+                start.Position.X + dirX * TargetLength,
+                start.Position.Y + dirY * TargetLength);
+        }
+        else if (endRank < startRank)
+        {
+            start.Position = new PointF(
+                end.Position.X - dirX * TargetLength,
+                end.Position.Y - dirY * TargetLength);
         }
         else
         {
-            fixedVertex = Edge.Start;
-            freeVertex = Edge.End;
+            // Remis: oba końce symetrycznie względem środka krawędzi.
+            PointF mid = Edge.Midpoint;
+            float half = TargetLength * 0.5f;
+            start.Position = new PointF(mid.X - dirX * half, mid.Y - dirY * half);
+            end.Position = new PointF(mid.X + dirX * half, mid.Y + dirY * half);
         }
-
-        float dx = freeVertex.Position.X - fixedVertex.Position.X;
-        float dy = freeVertex.Position.Y - fixedVertex.Position.Y;
-        float currentLength = MathF.Sqrt(dx * dx + dy * dy);
-
-        float dirX;
-        float dirY;
-        if (currentLength < 1e-4f)
-        {
-            dirX = 1f;
-            dirY = 0f;
-        }
-        else
-        {
-            dirX = dx / currentLength;
-            dirY = dy / currentLength;
-        }
-
-        freeVertex.Position = new PointF(
-            fixedVertex.Position.X + dirX * TargetLength,
-            fixedVertex.Position.Y + dirY * TargetLength);
     }
 }

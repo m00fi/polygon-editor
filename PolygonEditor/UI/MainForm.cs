@@ -3,6 +3,7 @@ using PolygonEditor.Drawing;
 using PolygonEditor.Interaction;
 using PolygonEditor.Models;
 using PolygonEditor.Scene;
+using System.Globalization;
 
 namespace PolygonEditor.UI;
 
@@ -27,10 +28,10 @@ public partial class MainForm : Form
         InitializeComponent();
         UseBresenhamAlgorithm = true;
         WireCanvasEvents();
-        UpdateStatus("Ready. LMB drag • RMB on edge adds vertex • RMB on vertex deletes • F1 help.");
+        UpdateStatus("Ready. LMB: drag vertex/polygon • RMB: edge/vertex menu • F1: help.");
     }
 
-    /// <summary>true = Bresenham, false = Graphics.DrawLine.</summary>
+    // true = Bresenham, false = Graphics.DrawLine.
     public bool UseBresenhamAlgorithm { get; private set; }
 
     private void WireCanvasEvents()
@@ -69,12 +70,13 @@ public partial class MainForm : Form
 
     private void MenuHelp_Click(object? sender, EventArgs e)
     {
-        // HelpForm - faza 5.
+        // HelpForm
         MessageBox.Show(
             this,
             "LMB: drag vertex or polygon.\n" +
-            "RMB on edge: add vertex at midpoint.\n" +
-            "RMB on vertex: delete vertex.\n" +
+            "RMB on edge: edge menu (add vertex, length/parallel constraints).\n" +
+            "RMB on vertex: vertex menu (delete vertex).\n" +
+            "Esc: cancel picking the second edge.\n" +
             "Ctrl+R: reset scene.",
             "Help - Polygon Editor",
             MessageBoxButtons.OK,
@@ -112,10 +114,15 @@ public partial class MainForm : Form
                     throw new InvalidOperationException("Menu hit edge is null while removing parallel constraint.");
 
                 _isRemovingParallelConstraint = false;
-                _scene.Constraints.RemoveParallelConstraint(menuHit.Edge, hit.Edge);
-                _solver.Solve(_scene.Constraints, new ConstraintAnchor());
-                canvasPanel.Invalidate();
-                UpdateStatus("Parallel constraint removed.");
+                if (_scene.Constraints.RemoveParallelConstraint(menuHit.Edge, hit.Edge))
+                {
+                    canvasPanel.Invalidate();
+                    UpdateStatus("Parallel constraint removed.");
+                }
+                else
+                {
+                    UpdateStatus("These edges are not parallel-constrained to each other.");
+                }
             }
             return;
         }
@@ -135,10 +142,13 @@ public partial class MainForm : Form
                     return;
                 }
 
-                _scene.Constraints.AddConstraint(new ParallelConstraint(menuHit.Edge, hit.Edge));
-                _solver.Solve(_scene.Constraints, new ConstraintAnchor());
-                canvasPanel.Invalidate();
-                UpdateStatus("Parallel constraint added.");
+                // Pierwsza wybrana krawędź stoi w miejscu, druga się obraca.
+                bool added = TryAddConstraint(
+                    new ParallelConstraint(menuHit.Edge, hit.Edge),
+                    new ConstraintAnchor { FixedEdge = menuHit.Edge });
+                UpdateStatus(added
+                    ? "Parallel constraint added."
+                    : "Parallel constraint not added: it conflicts with existing constraints.");
             }
             return;
         }
@@ -161,16 +171,16 @@ public partial class MainForm : Form
         _dragPolygon = null;
 
 
-        if (hit.Kind == HitKind.Vertex && hit.Vertex is not null)
+        if (hit.Kind == HitKind.Vertex && hit.Vertex is not null && hit.Polygon is not null)
         {
             _isDragging = true;
             _dragKind = HitKind.Vertex;
             _dragVertex = hit.Vertex;
             _dragPolygon = hit.Polygon;
-            // Wierzchołek od razu podąża za kursorem.
-            _dragVertex.Position = point;
-            canvasPanel.Invalidate();
             UpdateStatus("Dragging vertex.");
+            // Wierzchołek od razu podąża za kursorem (z uwzględnieniem ograniczeń).
+            DragVertexTo(hit.Vertex, hit.Polygon, point);
+            canvasPanel.Invalidate();
         }
         else if (hit.Kind == HitKind.Polygon && hit.Polygon is not null)
         {
@@ -181,7 +191,7 @@ public partial class MainForm : Form
         }
         else if (hit.Kind == HitKind.Edge)
         {
-            UpdateStatus("Edge hit - RMB adds a vertex at midpoint.");
+            UpdateStatus("Edge hit - RMB opens the edge menu.");
         }
     }
 
@@ -220,10 +230,9 @@ public partial class MainForm : Form
             return;
         }
 
-        if (_dragKind == HitKind.Vertex && _dragVertex is not null)
+        if (_dragKind == HitKind.Vertex && _dragVertex is not null && _dragPolygon is not null)
         {
-            _dragVertex.Position = point;
-            _solver.Solve(_scene.Constraints, new ConstraintAnchor { FixedVertex = _dragVertex });
+            DragVertexTo(_dragVertex, _dragPolygon, point);
             canvasPanel.Invalidate();
         }
         else if (_dragKind == HitKind.Polygon && _dragPolygon is not null)
@@ -246,6 +255,36 @@ public partial class MainForm : Form
         _dragVertex = null;
         _dragPolygon = null;
         UpdateStatus("Ready.");
+    }
+
+    // Gdy ograniczeń nie da się spełnić, ruch jest wycofywany i przesuwany jest cały wielokąt
+    // (translacja zachowuje długości i kierunki krawędzi).
+    private void DragVertexTo(Vertex vertex, Models.Polygon polygon, PointF point)
+    {
+        SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
+        PointF previous = vertex.Position;
+
+        vertex.Position = point;
+        if (_solver.Solve(_scene.Constraints, new ConstraintAnchor { FixedVertex = vertex }))
+            return;
+
+        snapshot.Restore();
+        polygon.Translate(point.X - previous.X, point.Y - previous.Y);
+        UpdateStatus("Constraints cannot be satisfied - moving the whole polygon instead.");
+    }
+
+    // Dodaje ograniczenie i rozwiązuje scenę; przy sprzeczności przywraca stan sprzed dodania.
+    private bool TryAddConstraint(IConstraint constraint, ConstraintAnchor anchor)
+    {
+        SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
+        _scene.Constraints.AddConstraint(constraint);
+
+        bool solved = _solver.Solve(_scene.Constraints, anchor);
+        if (!solved)
+            snapshot.Restore();
+
+        canvasPanel.Invalidate();
+        return solved;
     }
 
     private void ResetScene()
@@ -336,7 +375,7 @@ public partial class MainForm : Form
             Left = 80,
             Top = 12,
             Width = 160,
-            Text = defaultLength.ToString("0.##")
+            Text = defaultLength.ToString("0.##", CultureInfo.InvariantCulture)
         };
         var ok = new Button { Text = "OK", DialogResult = DialogResult.OK, Left = 80, Top = 50, Width = 75 };
         var cancel = new Button { Text = "Cancel", DialogResult = DialogResult.Cancel, Left = 165, Top = 50, Width = 75 };
@@ -348,7 +387,9 @@ public partial class MainForm : Form
         if (dialog.ShowDialog() != DialogResult.OK)
             return false;
 
-        return float.TryParse(box.Text, out length) && length >= 1f;
+        // Akceptujemy zarówno kropkę, jak i przecinek dziesiętny.
+        string text = box.Text.Trim().Replace(',', '.');
+        return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out length) && length >= 1f;
     }
 
     private void addLengthConstraint(object sender, EventArgs e)
@@ -358,10 +399,13 @@ public partial class MainForm : Form
         float defaultLength = hit.Edge?.Length ?? 100f;
         if (hit.Edge != null && TryAskLength(defaultLength, out length))
         {
-            _scene.Constraints.AddConstraint(new LengthConstraint(hit.Edge, length));
-            _solver.Solve(_scene.Constraints, new ConstraintAnchor());
-            canvasPanel.Invalidate();
-            UpdateStatus($"Length constraint set to {length:0.##}.");
+            // Start krawędzi stoi w miejscu, End przesuwa się wzdłuż krawędzi.
+            bool added = TryAddConstraint(
+                new LengthConstraint(hit.Edge, length),
+                new ConstraintAnchor { FixedVertex = hit.Edge.Start });
+            UpdateStatus(added
+                ? $"Length constraint set to {length:0.##}."
+                : "Length constraint not set: it conflicts with existing constraints.");
         }
         else
         {
@@ -382,6 +426,20 @@ public partial class MainForm : Form
 
     private void removeParallel(object sender, EventArgs e)
     {
+        Edge? edge = _menuHit.Edge;
+        if (edge is null)
+            return;
+
+        // Jedna para - usuwamy od razu, bez wybierania drugiej krawędzi.
+        IReadOnlyList<ParallelConstraint> pairs = _scene.Constraints.GetParallelConstraints(edge);
+        if (pairs.Count == 1)
+        {
+            _scene.Constraints.RemoveConstraint(pairs[0]);
+            canvasPanel.Invalidate();
+            UpdateStatus("Parallel constraint removed.");
+            return;
+        }
+
         _isAddingParallelConstraint = false;
         _isRemovingParallelConstraint = true;
         UpdateStatus("Remove parallel: left-click the second edge (Esc or click elsewhere to cancel).");

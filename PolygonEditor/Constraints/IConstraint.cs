@@ -5,16 +5,19 @@ using System.Text;
 
 namespace PolygonEditor.Constraints
 {
-    /// <summary>Interfejs reprezentujący ograniczenie w systemie edycji wielokątów.</summary>
     public interface IConstraint
     {
         Guid Id { get; }
         IReadOnlyList<Edge> InvolvedEdges { get; }
         bool InvolvesEdge(Edge edge);
-        void Satisfy(ConstraintAnchor anchor);
 
+        // Jeden krok korekty: przesuwa wierzchołki dalsze od kotwicy (wg rang z kontekstu).
+        void Satisfy(SolveContext context);
+
+        bool IsSatisfied();
     }
 
+    // Element trzymany w miejscu podczas rozwiązywania (np. przeciągany wierzchołek).
     public readonly struct ConstraintAnchor
     {
         public Vertex? FixedVertex { get; init; }

@@ -4,7 +4,6 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Drawing;
 
-/// <summary>Rysuje scenę na Graphics (Bitmap + Bresenham lub DrawLine).</summary>
 public sealed class Renderer
 {
     public Color BackgroundColor { get; set; } = Color.White;
@@ -37,12 +36,13 @@ public sealed class Renderer
             }
 
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            int parallelNumber = 0;
             foreach (IConstraint constraint in scene.Constraints.Constraints)
             {
                 if (constraint is LengthConstraint length)
                     DrawLength(g, length);
                 else if (constraint is ParallelConstraint parallel)
-                    DrawParallel(g, parallel);
+                    DrawParallel(g, parallel, ++parallelNumber);
             }
         }
 
@@ -75,13 +75,14 @@ public sealed class Renderer
         g.DrawEllipse(stroke, rect);
     }
 
-    private void DrawParallel(Graphics g, ParallelConstraint parallel)
+    private void DrawParallel(Graphics g, ParallelConstraint parallel, int number)
     {
-        DrawParallelMarks(g, parallel.Edge1);
-        DrawParallelMarks(g, parallel.Edge2);
+        DrawParallelMarks(g, parallel.Edge1, number);
+        DrawParallelMarks(g, parallel.Edge2, number);
     }
 
-    private static void DrawParallelMarks(Graphics g, Edge edge)
+    // Dwie kreski w poprzek krawędzi + numer pary (ta sama liczba na obu krawędziach).
+    private static void DrawParallelMarks(Graphics g, Edge edge, int number)
     {
         if (!TryGetEdgeFrame(edge, out PointF mid, out float ux, out float uy, out float nx, out float ny))
             return;
@@ -93,6 +94,25 @@ public sealed class Renderer
 
         DrawTick(g, pen, mid, ux, uy, nx, ny, -spacing, tickHalf);
         DrawTick(g, pen, mid, ux, uy, nx, ny, spacing, tickHalf);
+
+        // Numer po przeciwnej stronie niż etykieta długości (ta jest rysowana dla ny >= 0).
+        if (ny > 0f)
+        {
+            nx = -nx;
+            ny = -ny;
+        }
+
+        const float offset = 16f;
+        string text = number.ToString();
+        using var font = new Font("Segoe UI", 8f, FontStyle.Bold);
+        using var brush = new SolidBrush(ParallelMarkColor);
+        SizeF size = g.MeasureString(text, font);
+        g.DrawString(
+            text,
+            font,
+            brush,
+            mid.X + nx * offset - size.Width * 0.5f,
+            mid.Y + ny * offset - size.Height * 0.5f);
     }
 
     private static void DrawTick(
