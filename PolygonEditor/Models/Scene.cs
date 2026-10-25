@@ -6,7 +6,7 @@ public sealed class Scene
     public const Continuity DefaultContinuity = Continuity.G1;
 
     private readonly List<Polygon> _polygons = [];
-    private ConstraintStore _constraintStore = new ConstraintStore();
+    private readonly ConstraintStore _constraintStore = new ConstraintStore();
 
     public IReadOnlyList<Polygon> Polygons => _polygons;
     public ConstraintStore Constraints => _constraintStore;
@@ -15,12 +15,6 @@ public sealed class Scene
     {
         ArgumentNullException.ThrowIfNull(polygon);
         _polygons.Add(polygon);
-    }
-
-    public void AddConstraintStore(ConstraintStore constraintStore)
-    {
-        ArgumentNullException.ThrowIfNull(constraintStore);
-        _constraintStore = constraintStore;
     }
 
     public bool Remove(Polygon polygon) => _polygons.Remove(polygon);

@@ -184,8 +184,8 @@ public sealed class Renderer
         DrawTick(g, pen, mid, ux, uy, nx, ny, -spacing, tickHalf);
         DrawTick(g, pen, mid, ux, uy, nx, ny, spacing, tickHalf);
 
-        // Numer po przeciwnej stronie niż etykieta długości (ta jest rysowana dla ny >= 0).
-        if (ny > 0f)
+        // Numer dokładnie po przeciwnej stronie niż etykieta długości (DrawLength odwraca normalną, gdy ny < 0).
+        if (ny >= 0f)
         {
             nx = -nx;
             ny = -ny;
