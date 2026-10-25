@@ -11,6 +11,9 @@ public sealed class Renderer
     public Color VertexFillColor { get; set; } = Color.LightBlue;
     public Color VertexStrokeColor { get; set; } = Color.Black;
     public float VertexRadius { get; set; } = 5f;
+    public Color ControlPolygonColor { get; set; } = Color.Gray;
+    public Color ControlPointFillColor { get; set; } = Color.Orange;
+    public float ControlPointHalfSize { get; set; } = 4f;
 
     private static readonly Color ParallelMarkColor = Color.Red;
     private static readonly Color LengthLabelColor = Color.Blue;
@@ -31,6 +34,12 @@ public sealed class Renderer
                 foreach (Edge edge in polygon.Edges)
                     DrawEdge(bitmap, g, edge, useBresenham);
 
+                foreach (Edge edge in polygon.Edges)
+                {
+                    if (edge.IsBezier)
+                        DrawControlPolygon(g, edge);
+                }
+
                 foreach (Vertex vertex in polygon.Vertices)
                     DrawVertex(g, vertex.Position);
             }
@@ -49,20 +58,53 @@ public sealed class Renderer
         target.DrawImageUnscaled(bitmap, 0, 0);
     }
 
+    // Krzywa Béziera to łamana z punktów algorytmu przyrostowego, rysowana tym samym algorytmem co odcinki.
     private void DrawEdge(Bitmap bitmap, Graphics g, Edge edge, bool useBresenham)
     {
-        int x0 = (int)MathF.Round(edge.Start.Position.X);
-        int y0 = (int)MathF.Round(edge.Start.Position.Y);
-        int x1 = (int)MathF.Round(edge.End.Position.X);
-        int y1 = (int)MathF.Round(edge.End.Position.Y);
+        using var pen = new Pen(EdgeColor, 1f);
+
+        if (!edge.IsBezier)
+        {
+            DrawSegment(bitmap, g, pen, edge.Start.Position, edge.End.Position, useBresenham);
+            return;
+        }
+
+        PointF[] points = BezierIncremental.ComputePoints(edge);
+        for (int i = 1; i < points.Length; i++)
+            DrawSegment(bitmap, g, pen, points[i - 1], points[i], useBresenham);
+    }
+
+    private static void DrawSegment(Bitmap bitmap, Graphics g, Pen pen, PointF a, PointF b, bool useBresenham)
+    {
+        int x0 = (int)MathF.Round(a.X);
+        int y0 = (int)MathF.Round(a.Y);
+        int x1 = (int)MathF.Round(b.X);
+        int y1 = (int)MathF.Round(b.Y);
 
         if (useBresenham)
-            Bresenham.DrawLine(bitmap, x0, y0, x1, y1, EdgeColor);
+            Bresenham.DrawLine(bitmap, x0, y0, x1, y1, pen.Color);
         else
-        {
-            using var pen = new Pen(EdgeColor, 1f);
             g.DrawLine(pen, x0, y0, x1, y1);
-        }
+    }
+
+    // Wielobok Béziera P0-P1-P2-P3 linią przerywaną + punkty kontrolne jako kwadraty.
+    private void DrawControlPolygon(Graphics g, Edge edge)
+    {
+        using var dashed = new Pen(ControlPolygonColor, 1f) { DashStyle = DashStyle.Dash };
+        g.DrawLines(dashed, [edge.Start.Position, edge.Control1.Position, edge.Control2.Position, edge.End.Position]);
+
+        DrawControlPoint(g, edge.Control1.Position);
+        DrawControlPoint(g, edge.Control2.Position);
+    }
+
+    private void DrawControlPoint(Graphics g, PointF position)
+    {
+        float s = ControlPointHalfSize;
+        var rect = new RectangleF(position.X - s, position.Y - s, s * 2f, s * 2f);
+        using var fill = new SolidBrush(ControlPointFillColor);
+        using var stroke = new Pen(VertexStrokeColor, 1f);
+        g.FillRectangle(fill, rect);
+        g.DrawRectangle(stroke, rect.X, rect.Y, rect.Width, rect.Height);
     }
 
     private void DrawVertex(Graphics g, PointF position)
