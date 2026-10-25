@@ -15,9 +15,30 @@ public sealed class ParallelConstraint : IConstraint
     {
         Edge1 = edge1 ?? throw new ArgumentNullException(nameof(edge1));
         Edge2 = edge2 ?? throw new ArgumentNullException(nameof(edge2));
-        if (ReferenceEquals(edge1, edge2))
-            throw new ArgumentException("Parallel constraint requires two distinct edges.");
+        if (!CanCreate(edge1, edge2, out string? reason))
+            throw new ArgumentException(reason);
     }
+
+    public static bool CanCreate(Edge edge1, Edge edge2, out string? reason)
+    {
+        if (ReferenceEquals(edge1, edge2))
+        {
+            reason = "Cannot make an edge parallel to itself.";
+            return false;
+        }
+
+        if (AreAdjacent(edge1, edge2))
+        {
+            reason = "Adjacent edges (sharing a vertex) cannot be parallel.";
+            return false;
+        }
+
+        reason = null;
+        return true;
+    }
+
+    private static bool AreAdjacent(Edge a, Edge b) =>
+        a.Start == b.Start || a.Start == b.End || a.End == b.Start || a.End == b.End;
 
     public bool InvolvesEdge(Edge edge) => edge == Edge1 || edge == Edge2;
 

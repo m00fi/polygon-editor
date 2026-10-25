@@ -123,6 +123,12 @@ public partial class MainForm : Form
                     throw new InvalidOperationException("Menu hit edge is null while adding parallel constraint.");
 
                 _isAddingParallelConstraint = false;
+                if (!ParallelConstraint.CanCreate(menuHit.Edge, hit.Edge, out string? reason))
+                {
+                    UpdateStatus($"Parallel constraint not added: {reason}");
+                    return;
+                }
+
                 _scene.Constraints.AddConstraint(new ParallelConstraint(menuHit.Edge, hit.Edge));
                 _solver.Solve(_scene.Constraints, new ConstraintAnchor());
                 canvasPanel.Invalidate();
@@ -341,7 +347,8 @@ public partial class MainForm : Form
     {
         var hit = _menuHit;
         float length;
-        if (hit.Edge != null && TryAskLength(100, out length))
+        float defaultLength = hit.Edge?.Length ?? 100f;
+        if (hit.Edge != null && TryAskLength(defaultLength, out length))
         {
             _scene.Constraints.AddConstraint(new LengthConstraint(hit.Edge, length));
             _solver.Solve(_scene.Constraints, new ConstraintAnchor());
