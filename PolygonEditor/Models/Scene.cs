@@ -41,10 +41,21 @@ public sealed class Scene
         _constraintStore.RemoveAllInvolvingEdge(edge);
         edge.Kind = kind;
         if (kind == EdgeKind.CubicBezier)
-            edge.InitializeControlPoints();
+            edge.InitializeControlPoints(OutwardSide(edge));
 
         UpdateDefaultContinuity(edge.Start);
         UpdateDefaultContinuity(edge.End);
+    }
+
+    // Przy obiegu zgodnym z zegarem (pole > 0, oś Y w dół) normalna (-dy, dx) wskazuje do wnętrza,
+    // więc na zewnątrz jest strona przeciwna.
+    private float OutwardSide(Edge edge)
+    {
+        Polygon? polygon = FindPolygon(edge);
+        if (polygon is null)
+            return 1f;
+
+        return polygon.SignedArea > 0f ? -1f : 1f;
     }
 
     public Vertex InsertVertex(Polygon polygon, Edge edge)

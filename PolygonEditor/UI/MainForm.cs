@@ -384,6 +384,42 @@ public partial class MainForm : Form
         bezierEdgeToolStripMenuItem.Checked = edge.Kind == EdgeKind.CubicBezier;
     }
 
+    // Ciągłość można wybrać tylko obok krzywej; C1 tylko obok Béziera.
+    private void vertexContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
+    {
+        Vertex? vertex = _menuHit.Vertex;
+        if (vertex is null)
+        {
+            e.Cancel = true;
+            return;
+        }
+
+        bool curve = vertex.HasAdjacentCurve;
+        continuityG0ToolStripMenuItem.Enabled = curve;
+        continuityG1ToolStripMenuItem.Enabled = curve;
+        continuityC1ToolStripMenuItem.Enabled = vertex.HasAdjacentBezier;
+        continuityG0ToolStripMenuItem.Checked = curve && vertex.Continuity == Continuity.G0;
+        continuityG1ToolStripMenuItem.Checked = curve && vertex.Continuity == Continuity.G1;
+        continuityC1ToolStripMenuItem.Checked = curve && vertex.Continuity == Continuity.C1;
+    }
+
+    private void setContinuityG0(object sender, EventArgs e) => SetContinuity(Continuity.G0);
+
+    private void setContinuityG1(object sender, EventArgs e) => SetContinuity(Continuity.G1);
+
+    private void setContinuityC1(object sender, EventArgs e) => SetContinuity(Continuity.C1);
+
+    private void SetContinuity(Continuity continuity)
+    {
+        Vertex? vertex = _menuHit.Vertex;
+        if (vertex is null)
+            return;
+
+        vertex.SetContinuityByUser(continuity);
+        canvasPanel.Invalidate();
+        UpdateStatus($"Continuity set to {continuity}.");
+    }
+
     private void setLineEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.Line, "Edge changed to a line segment.");
 
     private void setBezierEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.CubicBezier, "Edge changed to a Bézier curve.");

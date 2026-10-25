@@ -48,12 +48,13 @@ public sealed class Edge
     }
 
     // 1/3 i 2/3 cięciwy, odsunięte w bok o 1/4 jej długości, żeby po zamianie krzywa była od razu widoczna.
-    public void InitializeControlPoints()
+    // side = +1 odsuwa w stronę normalnej (-dy, dx), side = -1 w przeciwną.
+    public void InitializeControlPoints(float side = 1f)
     {
         PointF a = Start.Position;
         PointF b = End.Position;
-        float offsetX = -(b.Y - a.Y) * 0.25f;
-        float offsetY = (b.X - a.X) * 0.25f;
+        float offsetX = -(b.Y - a.Y) * 0.25f * side;
+        float offsetY = (b.X - a.X) * 0.25f * side;
 
         PointF c1 = Lerp(a, b, 1f / 3f);
         PointF c2 = Lerp(a, b, 2f / 3f);

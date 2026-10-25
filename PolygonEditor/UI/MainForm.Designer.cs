@@ -38,6 +38,10 @@ partial class MainForm
         addParallelConstraintToolStripMenuItem = new ToolStripMenuItem();
         removeLengthConstraintToolStripMenuItem = new ToolStripMenuItem();
         removeParallelConstraintToolStripMenuItem = new ToolStripMenuItem();
+        continuitySeparator = new ToolStripSeparator();
+        continuityG0ToolStripMenuItem = new ToolStripMenuItem();
+        continuityG1ToolStripMenuItem = new ToolStripMenuItem();
+        continuityC1ToolStripMenuItem = new ToolStripMenuItem();
         edgeKindSeparator = new ToolStripSeparator();
         lineEdgeToolStripMenuItem = new ToolStripMenuItem();
         bezierEdgeToolStripMenuItem = new ToolStripMenuItem();
@@ -163,9 +167,10 @@ partial class MainForm
         // 
         // vertexContextMenu
         // 
-        vertexContextMenu.Items.AddRange(new ToolStripItem[] { removeVertexToolStripMenuItem });
+        vertexContextMenu.Items.AddRange(new ToolStripItem[] { removeVertexToolStripMenuItem, continuitySeparator, continuityG0ToolStripMenuItem, continuityG1ToolStripMenuItem, continuityC1ToolStripMenuItem });
         vertexContextMenu.Name = "vertexContextMenu";
-        vertexContextMenu.Size = new Size(153, 26);
+        vertexContextMenu.Size = new Size(200, 98);
+        vertexContextMenu.Opening += vertexContextMenu_Opening;
         // 
         // removeVertexToolStripMenuItem
         // 
@@ -173,7 +178,33 @@ partial class MainForm
         removeVertexToolStripMenuItem.Size = new Size(152, 22);
         removeVertexToolStripMenuItem.Text = "Remove vertex";
         removeVertexToolStripMenuItem.Click += removeVertex;
-        // 
+        //
+        // continuitySeparator
+        //
+        continuitySeparator.Name = "continuitySeparator";
+        continuitySeparator.Size = new Size(196, 6);
+        //
+        // continuityG0ToolStripMenuItem
+        //
+        continuityG0ToolStripMenuItem.Name = "continuityG0ToolStripMenuItem";
+        continuityG0ToolStripMenuItem.Size = new Size(199, 22);
+        continuityG0ToolStripMenuItem.Text = "Continuity G0 (position)";
+        continuityG0ToolStripMenuItem.Click += setContinuityG0;
+        //
+        // continuityG1ToolStripMenuItem
+        //
+        continuityG1ToolStripMenuItem.Name = "continuityG1ToolStripMenuItem";
+        continuityG1ToolStripMenuItem.Size = new Size(199, 22);
+        continuityG1ToolStripMenuItem.Text = "Continuity G1 (tangent direction)";
+        continuityG1ToolStripMenuItem.Click += setContinuityG1;
+        //
+        // continuityC1ToolStripMenuItem
+        //
+        continuityC1ToolStripMenuItem.Name = "continuityC1ToolStripMenuItem";
+        continuityC1ToolStripMenuItem.Size = new Size(199, 22);
+        continuityC1ToolStripMenuItem.Text = "Continuity C1 (tangent vector)";
+        continuityC1ToolStripMenuItem.Click += setContinuityC1;
+        //
         // edgeContexMenu
         // 
         edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem, edgeKindSeparator, lineEdgeToolStripMenuItem, bezierEdgeToolStripMenuItem });
@@ -284,6 +315,10 @@ partial class MainForm
     private ToolStripMenuItem addParallelConstraintToolStripMenuItem;
     private ToolStripMenuItem removeLengthConstraintToolStripMenuItem;
     private ToolStripMenuItem removeParallelConstraintToolStripMenuItem;
+    private ToolStripSeparator continuitySeparator;
+    private ToolStripMenuItem continuityG0ToolStripMenuItem;
+    private ToolStripMenuItem continuityG1ToolStripMenuItem;
+    private ToolStripMenuItem continuityC1ToolStripMenuItem;
     private ToolStripSeparator edgeKindSeparator;
     private ToolStripMenuItem lineEdgeToolStripMenuItem;
     private ToolStripMenuItem bezierEdgeToolStripMenuItem;

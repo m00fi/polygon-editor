@@ -11,10 +11,11 @@ public sealed class Renderer
     public Color VertexFillColor { get; set; } = Color.LightBlue;
     public Color VertexStrokeColor { get; set; } = Color.Black;
     public float VertexRadius { get; set; } = 5f;
-    public Color ControlPolygonColor { get; set; } = Color.Gray;
+    public Color ControlPolygonColor { get; set; } = Color.Black;
     public Color ControlPointFillColor { get; set; } = Color.Orange;
     public float ControlPointHalfSize { get; set; } = 4f;
 
+    private static readonly Color ContinuityLabelColor = Color.DarkGreen;
     private static readonly Color ParallelMarkColor = Color.Red;
     private static readonly Color LengthLabelColor = Color.Blue;
 
@@ -45,6 +46,15 @@ public sealed class Renderer
             }
 
             g.SmoothingMode = SmoothingMode.AntiAlias;
+            foreach (Models.Polygon polygon in scene.Polygons)
+            {
+                foreach (Vertex vertex in polygon.Vertices)
+                {
+                    if (vertex.HasAdjacentCurve)
+                        DrawContinuityLabel(g, vertex);
+                }
+            }
+
             int parallelNumber = 0;
             foreach (IConstraint constraint in scene.Constraints.Constraints)
             {
@@ -90,7 +100,8 @@ public sealed class Renderer
     // Wielobok Béziera P0-P1-P2-P3 linią przerywaną + punkty kontrolne jako kwadraty.
     private void DrawControlPolygon(Graphics g, Edge edge)
     {
-        using var dashed = new Pen(ControlPolygonColor, 1f) { DashStyle = DashStyle.Dash };
+        // 6px kreski 6px przerwy
+        using var dashed = new Pen(ControlPolygonColor, 1.5f) { DashPattern = [4f, 4f] };
         g.DrawLines(dashed, [edge.Start.Position, edge.Control1.Position, edge.Control2.Position, edge.End.Position]);
 
         DrawControlPoint(g, edge.Control1.Position);
@@ -115,6 +126,42 @@ public sealed class Renderer
         using var stroke = new Pen(VertexStrokeColor, 1.5f);
         g.FillEllipse(fill, rect);
         g.DrawEllipse(stroke, rect);
+    }
+
+    // Etykieta odsunięta od środka sąsiednich wierzchołków, czyli zwykle na zewnątrz kąta.
+    private static void DrawContinuityLabel(Graphics g, Vertex vertex)
+    {
+        if (vertex.Incoming is null || vertex.Outgoing is null)
+            return;
+
+        PointF p = vertex.Position;
+        PointF prev = vertex.Incoming.Start.Position;
+        PointF next = vertex.Outgoing.End.Position;
+        float dx = p.X - (prev.X + next.X) * 0.5f;
+        float dy = p.Y - (prev.Y + next.Y) * 0.5f;
+        float len = MathF.Sqrt(dx * dx + dy * dy);
+        if (len < 1e-4f)
+        {
+            dx = 0f;
+            dy = -1f;
+        }
+        else
+        {
+            dx /= len;
+            dy /= len;
+        }
+
+        const float offset = 18f;
+        string text = vertex.Continuity.ToString();
+        using var font = new Font("Segoe UI", 8f, FontStyle.Bold);
+        using var brush = new SolidBrush(ContinuityLabelColor);
+        SizeF size = g.MeasureString(text, font);
+        g.DrawString(
+            text,
+            font,
+            brush,
+            p.X + dx * offset - size.Width * 0.5f,
+            p.Y + dy * offset - size.Height * 0.5f);
     }
 
     private void DrawParallel(Graphics g, ParallelConstraint parallel, int number)

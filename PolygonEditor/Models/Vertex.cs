@@ -31,6 +31,16 @@ public sealed class Vertex
         (Incoming is not null && Incoming.Kind != EdgeKind.Line)
         || (Outgoing is not null && Outgoing.Kind != EdgeKind.Line);
 
+    // C1 ma sens tylko obok Béziera (łuk dopuszcza G0/G1).
+    public bool HasAdjacentBezier =>
+        (Incoming is not null && Incoming.IsBezier) || (Outgoing is not null && Outgoing.IsBezier);
+
+    public void SetContinuityByUser(Continuity continuity)
+    {
+        Continuity = continuity;
+        ContinuityUserSet = true;
+    }
+
     public void Translate(float dx, float dy)
     {
         Position = new PointF(Position.X + dx, Position.Y + dy);

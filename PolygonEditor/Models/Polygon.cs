@@ -41,6 +41,25 @@ public sealed class Polygon
             edge.TranslateControlPoints(dx, dy);
     }
 
+    // Wzór shoelace. Przy osi Y w dół wynik > 0 oznacza obieg zgodny z ruchem wskazówek zegara na ekranie.
+    // Dla wielokąta z samoprzecięciami znak wskazuje przeważający kierunek obiegu.
+    public float SignedArea
+    {
+        get
+        {
+            float sum = 0f;
+            int n = _vertices.Count;
+            for (int i = 0; i < n; i++)
+            {
+                PointF a = _vertices[i].Position;
+                PointF b = _vertices[(i + 1) % n].Position;
+                sum += a.X * b.Y - b.X * a.Y;
+            }
+
+            return sum * 0.5f;
+        }
+    }
+
     public bool ContainsVertex(Vertex vertex) => _vertices.Contains(vertex);
 
     public bool ContainsEdge(Edge edge) => _edges.Contains(edge);
