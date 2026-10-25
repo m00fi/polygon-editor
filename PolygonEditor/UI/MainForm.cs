@@ -97,6 +97,12 @@ public partial class MainForm : Form
         var ipoint = new Point(e.X, e.Y);
         HitResult hit = HitTester.HitTest(_scene, point);
 
+        if (IsPickingSecondEdge && (e.Button != MouseButtons.Left || hit.Kind != HitKind.Edge))
+        {
+            CancelEdgePicking();
+            return;
+        }
+
         if (_isRemovingParallelConstraint)
         {
             if (hit.Kind == HitKind.Edge && hit.Polygon is not null && hit.Edge is not null)
@@ -248,6 +254,8 @@ public partial class MainForm : Form
         _dragKind = HitKind.None;
         _dragVertex = null;
         _dragPolygon = null;
+        _isAddingParallelConstraint = false;
+        _isRemovingParallelConstraint = false;
         _scene = DemoSceneFactory.Create();
         canvasPanel.Invalidate();
     }
@@ -374,13 +382,38 @@ public partial class MainForm : Form
 
     private void removeParallel(object sender, EventArgs e)
     {
-        UpdateStatus("Select second edge for parallel constraint (Left-click to select).");
+        _isAddingParallelConstraint = false;
         _isRemovingParallelConstraint = true;
+        UpdateStatus("Remove parallel: left-click the second edge (Esc or click elsewhere to cancel).");
     }
 
     private void addParallel(object sender, EventArgs e)
     {
-        UpdateStatus("Select second edge for parallel constraint (Left-click to select).");
+        _isRemovingParallelConstraint = false;
         _isAddingParallelConstraint = true;
+        UpdateStatus("Add parallel: left-click the second edge (Esc or click elsewhere to cancel).");
+    }
+
+    private bool IsPickingSecondEdge => _isAddingParallelConstraint || _isRemovingParallelConstraint;
+
+    private void CancelEdgePicking()
+    {
+        if (!IsPickingSecondEdge)
+            return;
+
+        _isAddingParallelConstraint = false;
+        _isRemovingParallelConstraint = false;
+        UpdateStatus("Edge selection cancelled.");
+    }
+
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData)
+    {
+        if (keyData == Keys.Escape && IsPickingSecondEdge)
+        {
+            CancelEdgePicking();
+            return true;
+        }
+
+        return base.ProcessCmdKey(ref msg, keyData);
     }
 }
