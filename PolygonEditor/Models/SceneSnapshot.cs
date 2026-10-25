@@ -33,6 +33,28 @@ public sealed class SceneSnapshot
         return snapshot;
     }
 
+    // Przesuwa punkty kontrolne Béziera o przesunięcie ich wierzchołka od chwili snapshotu
+    // (Control1 należy do Start, Control2 do End), więc kształt krzywej przy wierzchołku się nie zmienia.
+    public void MoveControlPointsWithVertices()
+    {
+        var previous = new Dictionary<Vertex, PointF>();
+        foreach ((Vertex vertex, PointF position) in _vertices)
+            previous[vertex] = position;
+
+        foreach ((ControlPoint controlPoint, _) in _controlPoints)
+        {
+            Edge edge = controlPoint.Edge;
+            if (!edge.IsBezier)
+                continue;
+
+            Vertex owner = controlPoint == edge.Control1 ? edge.Start : edge.End;
+            if (!previous.TryGetValue(owner, out PointF old))
+                continue;
+
+            controlPoint.Translate(owner.Position.X - old.X, owner.Position.Y - old.Y);
+        }
+    }
+
     public void Restore()
     {
         foreach ((Vertex vertex, PointF position) in _vertices)

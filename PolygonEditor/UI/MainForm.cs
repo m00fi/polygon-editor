@@ -15,6 +15,7 @@ public partial class MainForm : Form
     private bool _isDragging;
     private HitKind _dragKind = HitKind.None;
     private Vertex? _dragVertex;
+    private ControlPoint? _dragControlPoint;
     private Models.Polygon? _dragPolygon;
     private PointF _lastMouse;
 
@@ -168,6 +169,7 @@ public partial class MainForm : Form
         _isDragging = false;
         _dragKind = HitKind.None;
         _dragVertex = null;
+        _dragControlPoint = null;
         _dragPolygon = null;
 
 
@@ -189,9 +191,15 @@ public partial class MainForm : Form
             _dragPolygon = hit.Polygon;
             UpdateStatus("Dragging polygon.");
         }
-        else if (hit.Kind == HitKind.ControlPoint)
+        else if (hit.Kind == HitKind.ControlPoint && hit.ControlPoint is not null)
         {
-            UpdateStatus("Control point hit.");
+            _isDragging = true;
+            _dragKind = HitKind.ControlPoint;
+            _dragControlPoint = hit.ControlPoint;
+            _dragPolygon = hit.Polygon;
+            UpdateStatus("Dragging control point.");
+            DragControlPointTo(hit.ControlPoint, point);
+            canvasPanel.Invalidate();
         }
         else if (hit.Kind == HitKind.Edge)
         {
@@ -240,6 +248,11 @@ public partial class MainForm : Form
             DragVertexTo(_dragVertex, _dragPolygon, point);
             canvasPanel.Invalidate();
         }
+        else if (_dragKind == HitKind.ControlPoint && _dragControlPoint is not null)
+        {
+            DragControlPointTo(_dragControlPoint, point);
+            canvasPanel.Invalidate();
+        }
         else if (_dragKind == HitKind.Polygon && _dragPolygon is not null)
         {
             float dx = point.X - _lastMouse.X;
@@ -258,8 +271,16 @@ public partial class MainForm : Form
         _isDragging = false;
         _dragKind = HitKind.None;
         _dragVertex = null;
+        _dragControlPoint = null;
         _dragPolygon = null;
         UpdateStatus("Ready.");
+    }
+
+    // Punkt kontrolny zawsze podąża za kursorem; wierzchołki segmentu stoją w miejscu.
+    // Wymuszanie ciągłości G1/C1 po drugiej stronie wierzchołka dojdzie w solverze (krok 6).
+    private static void DragControlPointTo(ControlPoint controlPoint, PointF point)
+    {
+        controlPoint.Position = point;
     }
 
     // Gdy ograniczeń nie da się spełnić, ruch jest wycofywany i przesuwany jest cały wielokąt
@@ -271,7 +292,11 @@ public partial class MainForm : Form
 
         vertex.Position = point;
         if (_solver.Solve(_scene.Constraints, new ConstraintAnchor { FixedVertex = vertex }))
+        {
+            // Dotyczy też wierzchołków przesuniętych przez solver.
+            snapshot.MoveControlPointsWithVertices();
             return;
+        }
 
         snapshot.Restore();
         polygon.Translate(point.X - previous.X, point.Y - previous.Y);
@@ -297,6 +322,7 @@ public partial class MainForm : Form
         _isDragging = false;
         _dragKind = HitKind.None;
         _dragVertex = null;
+        _dragControlPoint = null;
         _dragPolygon = null;
         _isAddingParallelConstraint = false;
         _isRemovingParallelConstraint = false;
