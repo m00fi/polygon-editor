@@ -189,6 +189,10 @@ public partial class MainForm : Form
             _dragPolygon = hit.Polygon;
             UpdateStatus("Dragging polygon.");
         }
+        else if (hit.Kind == HitKind.ControlPoint)
+        {
+            UpdateStatus("Control point hit.");
+        }
         else if (hit.Kind == HitKind.Edge)
         {
             UpdateStatus("Edge hit - RMB opens the edge menu.");
@@ -223,6 +227,7 @@ public partial class MainForm : Form
             canvasPanel.Cursor = hover.Kind switch
             {
                 HitKind.Vertex => Cursors.Hand,
+                HitKind.ControlPoint => Cursors.Hand,
                 HitKind.Polygon => Cursors.SizeAll,
                 HitKind.Edge => Cursors.Cross,
                 _ => Cursors.Default

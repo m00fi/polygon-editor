@@ -1,16 +1,17 @@
+using PolygonEditor.Drawing;
 using PolygonEditor.Models;
 
 namespace PolygonEditor.Interaction;
 
-/// <summary>Wykrywanie kliknięć w wierzchołki, krawędzie i wnętrze wielokąta.</summary>
 public static class HitTester
 {
     public const float VertexHitRadius = 8f;
+    public const float ControlPointHitRadius = 7f;
     public const float EdgeHitThreshold = 10f;
 
     public static HitResult HitTest(Models.Scene scene, PointF point)
     {
-        // Priorytet: wierzchołek > krawędź > wnętrze.
+        // Priorytet: wierzchołek > punkt kontrolny > krawędź > wnętrze.
         foreach (Models.Polygon polygon in scene.Polygons)
         {
             foreach (Vertex vertex in polygon.Vertices)
@@ -24,7 +25,20 @@ public static class HitTester
         {
             foreach (Edge edge in polygon.Edges)
             {
-                if (DistanceToSegment(point, edge.Start.Position, edge.End.Position) <= EdgeHitThreshold)
+                if (!edge.IsBezier)
+                    continue;
+                if (Distance(point, edge.Control1.Position) <= ControlPointHitRadius)
+                    return HitResult.FromControlPoint(polygon, edge.Control1);
+                if (Distance(point, edge.Control2.Position) <= ControlPointHitRadius)
+                    return HitResult.FromControlPoint(polygon, edge.Control2);
+            }
+        }
+
+        foreach (Models.Polygon polygon in scene.Polygons)
+        {
+            foreach (Edge edge in polygon.Edges)
+            {
+                if (DistanceToPolyline(point, EdgePolyline(edge)) <= EdgeHitThreshold)
                     return HitResult.FromEdge(polygon, edge);
             }
         }
@@ -32,11 +46,31 @@ public static class HitTester
         for (int i = scene.Polygons.Count - 1; i >= 0; i--)
         {
             Models.Polygon polygon = scene.Polygons[i];
-            if (IsPointInPolygon(point, polygon))
+            if (IsPointInPolygon(point, Outline(polygon)))
                 return HitResult.FromPolygon(polygon);
         }
 
         return HitResult.None;
+    }
+
+    // Odcinek to dwa punkty, krzywa - te same punkty co przy rysowaniu (algorytm przyrostowy).
+    private static PointF[] EdgePolyline(Edge edge) =>
+        edge.IsBezier
+            ? BezierIncremental.ComputePoints(edge)
+            : [edge.Start.Position, edge.End.Position];
+
+    // Obwód wielokąta z uwzględnieniem krzywych; ostatni punkt każdej krawędzi to początek następnej.
+    private static List<PointF> Outline(Models.Polygon polygon)
+    {
+        var outline = new List<PointF>();
+        foreach (Edge edge in polygon.Edges)
+        {
+            PointF[] points = EdgePolyline(edge);
+            for (int i = 0; i < points.Length - 1; i++)
+                outline.Add(points[i]);
+        }
+
+        return outline;
     }
 
     private static float Distance(PointF a, PointF b)
@@ -44,6 +78,14 @@ public static class HitTester
         float dx = a.X - b.X;
         float dy = a.Y - b.Y;
         return MathF.Sqrt(dx * dx + dy * dy);
+    }
+
+    private static float DistanceToPolyline(PointF p, PointF[] points)
+    {
+        float best = float.MaxValue;
+        for (int i = 1; i < points.Length; i++)
+            best = MathF.Min(best, DistanceToSegment(p, points[i - 1], points[i]));
+        return best;
     }
 
     private static float DistanceToSegment(PointF p, PointF a, PointF b)
@@ -60,16 +102,15 @@ public static class HitTester
         return Distance(p, projection);
     }
 
-    private static bool IsPointInPolygon(PointF point, Models.Polygon polygon)
+    // Reguła even-odd (dopuszcza samoprzecięcia).
+    private static bool IsPointInPolygon(PointF point, IReadOnlyList<PointF> outline)
     {
-        // Even-odd rule.
         bool inside = false;
-        IReadOnlyList<Vertex> vertices = polygon.Vertices;
-        int n = vertices.Count;
+        int n = outline.Count;
         for (int i = 0, j = n - 1; i < n; j = i++)
         {
-            PointF vi = vertices[i].Position;
-            PointF vj = vertices[j].Position;
+            PointF vi = outline[i];
+            PointF vj = outline[j];
 
             bool intersect = (vi.Y > point.Y) != (vj.Y > point.Y)
                 && point.X < (vj.X - vi.X) * (point.Y - vi.Y) / (vj.Y - vi.Y + float.Epsilon) + vi.X;
