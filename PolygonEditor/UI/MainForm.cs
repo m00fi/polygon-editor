@@ -23,6 +23,7 @@ public partial class MainForm : Form
     private HitResult _menuHit = HitResult.None;
     private bool _isRemovingParallelConstraint = false;
     private bool _isAddingParallelConstraint = false;
+    private HelpForm? _helpForm;
 
     public MainForm()
     {
@@ -69,19 +70,18 @@ public partial class MainForm : Form
         UpdateStatus("Scene reset to demo.");
     }
 
+    // Okno niemodalne, żeby można było czytać pomoc i jednocześnie edytować scenę; tylko jedna instancja.
     private void MenuHelp_Click(object? sender, EventArgs e)
     {
-        // HelpForm
-        MessageBox.Show(
-            this,
-            "LMB: drag vertex or polygon.\n" +
-            "RMB on edge: edge menu (add vertex, length/parallel constraints).\n" +
-            "RMB on vertex: vertex menu (delete vertex).\n" +
-            "Esc: cancel picking the second edge.\n" +
-            "Ctrl+R: reset scene.",
-            "Help - Polygon Editor",
-            MessageBoxButtons.OK,
-            MessageBoxIcon.Information);
+        if (_helpForm is null || _helpForm.IsDisposed)
+        {
+            _helpForm = new HelpForm();
+            _helpForm.Show(this);
+        }
+        else
+        {
+            _helpForm.Activate();
+        }
     }
 
     private void CanvasPanel_Paint(object? sender, PaintEventArgs e)
