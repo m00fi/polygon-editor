@@ -27,8 +27,47 @@ public sealed class Edge
     public bool IsBezier => Kind == EdgeKind.CubicBezier;
     public bool IsArc => Kind == EdgeKind.CircularArc;
 
-    // Na razie tylko przypadek G0/G0 (półokrąg); G1 na jednym końcu dojdzie w kolejnym kroku.
-    public ArcGeometry Arc => ArcGeometry.Semicircle(Start.Position, End.Position, ArcSide);
+    // G1 na jednym końcu: łuk styczny do sąsiedniej krawędzi; G0 na obu (lub styczna równoległa do cięciwy): półokrąg.
+    // Łuk sam dopasowuje się do sąsiada, więc w jego wierzchołkach solver nie potrzebuje ograniczenia ciągłości.
+    public ArcGeometry Arc => ComputeArc(useNeighbours: true);
+
+    // useNeighbours = false przy liczeniu stycznej dla sąsiedniego łuku - przerywa cykl, gdy dwa łuki
+    // mają G1 we wspólnym wierzchołku (wtedy sąsiad jest brany jako półokrąg).
+    private ArcGeometry ComputeArc(bool useNeighbours)
+    {
+        PointF s = Start.Position;
+        PointF e = End.Position;
+
+        if (useNeighbours)
+        {
+            if (Start.Continuity != Continuity.G0 && Start.Incoming is { } before
+                && ArcGeometry.TangentAtStart(s, e, before.ArrivalDirection()) is { } fromStart)
+                return fromStart;
+
+            if (End.Continuity != Continuity.G0 && End.Outgoing is { } after
+                && ArcGeometry.TangentAtEnd(s, e, after.DepartureDirection()) is { } fromEnd)
+                return fromEnd;
+        }
+
+        return ArcGeometry.Semicircle(s, e, ArcSide);
+    }
+
+    // Kierunek ruchu wzdłuż krawędzi w End (przy dojściu) i w Start (przy wyjściu) - to z nich łuk bierze styczną.
+    public PointF ArrivalDirection() => Kind switch
+    {
+        EdgeKind.CubicBezier => Sub(End.Position, Control2.Position),
+        EdgeKind.CircularArc => ComputeArc(useNeighbours: false).TangentAt(1f),
+        _ => Direction
+    };
+
+    public PointF DepartureDirection() => Kind switch
+    {
+        EdgeKind.CubicBezier => Sub(Control1.Position, Start.Position),
+        EdgeKind.CircularArc => ComputeArc(useNeighbours: false).TangentAt(0f),
+        _ => Direction
+    };
+
+    private static PointF Sub(PointF a, PointF b) => new(a.X - b.X, a.Y - b.Y);
 
     public PointF Midpoint => new(
         (Start.Position.X + End.Position.X) * 0.5f,

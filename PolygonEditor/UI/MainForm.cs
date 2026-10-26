@@ -401,7 +401,7 @@ public partial class MainForm : Form
         bool curve = vertex.HasAdjacentCurve;
         continuityG0ToolStripMenuItem.Enabled = curve;
         continuityG1ToolStripMenuItem.Enabled = curve;
-        continuityC1ToolStripMenuItem.Enabled = vertex.HasAdjacentBezier;
+        continuityC1ToolStripMenuItem.Enabled = vertex.AllowsC1;
         continuityG0ToolStripMenuItem.Checked = curve && vertex.Continuity == Continuity.G0;
         continuityG1ToolStripMenuItem.Checked = curve && vertex.Continuity == Continuity.G1;
         continuityC1ToolStripMenuItem.Checked = curve && vertex.Continuity == Continuity.C1;
@@ -420,19 +420,18 @@ public partial class MainForm : Form
             return;
 
         SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
-        Continuity previous = vertex.Continuity;
-        bool previousUserSet = vertex.ContinuityUserSet;
 
-        vertex.SetContinuityByUser(continuity);
+        IReadOnlyList<Vertex> changed = _scene.SetContinuity(vertex, continuity);
         if (_solver.Solve(_scene, new ConstraintAnchor { FixedVertex = vertex }))
         {
-            UpdateStatus($"Continuity set to {continuity}.");
+            UpdateStatus(changed.Count > 0
+                ? $"Continuity set to {continuity}. An arc can have G1 at one end only - its other end was set to G0."
+                : $"Continuity set to {continuity}.");
         }
         else
         {
+            // Snapshot przywraca też ciągłość wierzchołków zmienionych przy okazji.
             snapshot.Restore();
-            vertex.Continuity = previous;
-            vertex.ContinuityUserSet = previousUserSet;
             UpdateStatus($"Continuity {continuity} conflicts with existing constraints.");
         }
 
