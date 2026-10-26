@@ -1,9 +1,5 @@
 # Polygon Editor
-
 Edytor wielokątów i wielokątów krzywoliniowych z ograniczeniami geometrycznymi.
-Projekt 1 z Grafiki Komputerowej 1 (WinForms, .NET 10).
-
-Wariant dla nazwisk A–K: ograniczenie **równoległości** dwóch krawędzi, domyślna ciągłość **G1** po zamianie krawędzi na krzywą Béziera.
 
 ## Uruchomienie
 
@@ -12,9 +8,6 @@ Wymagania: Windows i .NET 10 SDK.
 ```bash
 dotnet run --project PolygonEditor
 ```
-
-Po starcie wyświetla się scena demonstracyjna z dwoma wielokątami. Pełna dokumentacja jest dostępna w aplikacji pod **F1** (menu *Help → Documentation*):
-obsługa myszy i klawiszy, założenia, model danych, mechanizm ograniczeń i algorytmy rysowania.
 
 ## Funkcje
 
