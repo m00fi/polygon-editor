@@ -39,6 +39,8 @@ public sealed class Renderer
                 {
                     if (edge.IsBezier)
                         DrawControlPolygon(g, edge);
+                    else if (edge.IsArc)
+                        DrawArcChord(g, edge);
                 }
 
                 foreach (Vertex vertex in polygon.Vertices)
@@ -68,18 +70,12 @@ public sealed class Renderer
         target.DrawImageUnscaled(bitmap, 0, 0);
     }
 
-    // Krzywa Béziera to łamana z punktów algorytmu przyrostowego, rysowana tym samym algorytmem co odcinki.
+    // Bézier i łuk to łamane z algorytmów przyrostowych, rysowane tym samym algorytmem co odcinki.
     private void DrawEdge(Bitmap bitmap, Graphics g, Edge edge, bool useBresenham)
     {
         using var pen = new Pen(EdgeColor, 1f);
 
-        if (!edge.IsBezier)
-        {
-            DrawSegment(bitmap, g, pen, edge.Start.Position, edge.End.Position, useBresenham);
-            return;
-        }
-
-        PointF[] points = BezierIncremental.ComputePoints(edge);
+        PointF[] points = EdgeShape.Points(edge);
         for (int i = 1; i < points.Length; i++)
             DrawSegment(bitmap, g, pen, points[i - 1], points[i], useBresenham);
     }
@@ -100,13 +96,22 @@ public sealed class Renderer
     // Wielobok Béziera P0-P1-P2-P3 linią przerywaną + punkty kontrolne jako kwadraty.
     private void DrawControlPolygon(Graphics g, Edge edge)
     {
-        // 6px kreski 6px przerwy
-        using var dashed = new Pen(ControlPolygonColor, 1.5f) { DashPattern = [4f, 4f] };
+        using Pen dashed = CreateDashedPen();
         g.DrawLines(dashed, [edge.Start.Position, edge.Control1.Position, edge.Control2.Position, edge.End.Position]);
 
         DrawControlPoint(g, edge.Control1.Position);
         DrawControlPoint(g, edge.Control2.Position);
     }
+
+    // Cięciwa łuku (odcinek między jego końcami) - tą samą linią przerywaną co wielobok Béziera.
+    private void DrawArcChord(Graphics g, Edge edge)
+    {
+        using Pen dashed = CreateDashedPen();
+        g.DrawLine(dashed, edge.Start.Position, edge.End.Position);
+    }
+
+    // 6 px kreski i 6 px przerwy (DashPattern w wielokrotnościach grubości pióra).
+    private Pen CreateDashedPen() => new(ControlPolygonColor, 1.5f) { DashPattern = [4f, 4f] };
 
     private void DrawControlPoint(Graphics g, PointF position)
     {

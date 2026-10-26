@@ -38,7 +38,7 @@ public static class HitTester
         {
             foreach (Edge edge in polygon.Edges)
             {
-                if (DistanceToPolyline(point, EdgePolyline(edge)) <= EdgeHitThreshold)
+                if (DistanceToPolyline(point, EdgeShape.Points(edge)) <= EdgeHitThreshold)
                     return HitResult.FromEdge(polygon, edge);
             }
         }
@@ -53,19 +53,13 @@ public static class HitTester
         return HitResult.None;
     }
 
-    // Odcinek to dwa punkty, krzywa - te same punkty co przy rysowaniu (algorytm przyrostowy).
-    private static PointF[] EdgePolyline(Edge edge) =>
-        edge.IsBezier
-            ? BezierIncremental.ComputePoints(edge)
-            : [edge.Start.Position, edge.End.Position];
-
-    // Obwód wielokąta z uwzględnieniem krzywych; ostatni punkt każdej krawędzi to początek następnej.
+    // Obwód wielokąta z uwzględnieniem krzywych i łuków; ostatni punkt każdej krawędzi to początek następnej.
     private static List<PointF> Outline(Models.Polygon polygon)
     {
         var outline = new List<PointF>();
         foreach (Edge edge in polygon.Edges)
         {
-            PointF[] points = EdgePolyline(edge);
+            PointF[] points = EdgeShape.Points(edge);
             for (int i = 0; i < points.Length - 1; i++)
                 outline.Add(points[i]);
         }
