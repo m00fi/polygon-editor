@@ -36,6 +36,8 @@ public sealed class Scene
         edge.Kind = kind;
         if (kind == EdgeKind.CubicBezier)
             edge.InitializeControlPoints(OutwardSide(edge));
+        else if (kind == EdgeKind.CircularArc)
+            edge.ArcSide = OutwardSide(edge);
 
         UpdateDefaultContinuity(edge.Start);
         UpdateDefaultContinuity(edge.End);
@@ -83,13 +85,14 @@ public sealed class Scene
         return true;
     }
 
-    // Ciągłość wybrana przez użytkownika zostaje; inaczej G1 obok krzywej, a G0 między samymi odcinkami.
+    // Ciągłość wybrana przez użytkownika zostaje; inaczej G1 obok Béziera, a G0 w pozostałych przypadkach
+    // (polecenie określa domyślną ciągłość tylko dla Béziera - łuk domyślnie ma G0 na obu końcach, czyli półokrąg).
     private static void UpdateDefaultContinuity(Vertex vertex)
     {
         if (vertex.ContinuityUserSet)
             return;
 
-        vertex.Continuity = vertex.HasAdjacentCurve ? DefaultContinuity : Continuity.G0;
+        vertex.Continuity = vertex.HasAdjacentBezier ? DefaultContinuity : Continuity.G0;
     }
 
     public Polygon? FindPolygon(Vertex vertex)

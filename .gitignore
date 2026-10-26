@@ -47,3 +47,6 @@ ehthumbs.db
 !.vscode/settings.json
 !.vscode/tasks.json
 !.vscode/launch.json
+
+# Notatki robocze
+STRUCTURE.md

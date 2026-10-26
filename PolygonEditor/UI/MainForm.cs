@@ -385,6 +385,7 @@ public partial class MainForm : Form
         removeParallelConstraintToolStripMenuItem.Enabled = hasParallel;
         lineEdgeToolStripMenuItem.Checked = isLine;
         bezierEdgeToolStripMenuItem.Checked = edge.Kind == EdgeKind.CubicBezier;
+        arcEdgeToolStripMenuItem.Checked = edge.Kind == EdgeKind.CircularArc;
     }
 
     // Ciągłość można wybrać tylko obok krzywej; C1 tylko obok Béziera.
@@ -441,6 +442,8 @@ public partial class MainForm : Form
     private void setLineEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.Line, "Edge changed to a line segment.");
 
     private void setBezierEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.CubicBezier, "Edge changed to a Bézier curve.");
+
+    private void setArcEdge(object sender, EventArgs e) => ChangeEdgeKind(EdgeKind.CircularArc, "Edge changed to a circular arc.");
 
     private void ChangeEdgeKind(EdgeKind kind, string message)
     {

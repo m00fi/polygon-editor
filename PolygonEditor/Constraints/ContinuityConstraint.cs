@@ -38,6 +38,11 @@ public sealed class ContinuityConstraint : IConstraint
                 if (vertex.Incoming is null || vertex.Outgoing is null)
                     continue;
 
+                // TODO(łuki): styczna łuku wynika z jego geometrii - obsługa w kolejnym kroku,
+                // na razie wierzchołki obok łuku są pomijane, żeby solver nie traktował łuku jak cięciwy.
+                if (vertex.Incoming.IsArc || vertex.Outgoing.IsArc)
+                    continue;
+
                 yield return new ContinuityConstraint(vertex, vertex.Incoming, vertex.Outgoing);
             }
         }

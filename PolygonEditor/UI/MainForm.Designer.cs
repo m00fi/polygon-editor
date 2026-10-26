@@ -45,6 +45,7 @@ partial class MainForm
         edgeKindSeparator = new ToolStripSeparator();
         lineEdgeToolStripMenuItem = new ToolStripMenuItem();
         bezierEdgeToolStripMenuItem = new ToolStripMenuItem();
+        arcEdgeToolStripMenuItem = new ToolStripMenuItem();
         menuStrip.SuspendLayout();
         toolPanel.SuspendLayout();
         groupDrawing.SuspendLayout();
@@ -207,9 +208,9 @@ partial class MainForm
         //
         // edgeContexMenu
         // 
-        edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem, edgeKindSeparator, lineEdgeToolStripMenuItem, bezierEdgeToolStripMenuItem });
+        edgeContexMenu.Items.AddRange(new ToolStripItem[] { addVertexToolStripMenuItem, addupdateLengthConstraintToolStripMenuItem, addParallelConstraintToolStripMenuItem, removeLengthConstraintToolStripMenuItem, removeParallelConstraintToolStripMenuItem, edgeKindSeparator, lineEdgeToolStripMenuItem, bezierEdgeToolStripMenuItem, arcEdgeToolStripMenuItem });
         edgeContexMenu.Name = "edgeContexMenu";
-        edgeContexMenu.Size = new Size(232, 186);
+        edgeContexMenu.Size = new Size(232, 208);
         edgeContexMenu.Opening += edgeContexMenu_Opening;
         // 
         // addVertexToolStripMenuItem
@@ -265,6 +266,13 @@ partial class MainForm
         bezierEdgeToolStripMenuItem.Size = new Size(231, 22);
         bezierEdgeToolStripMenuItem.Text = "Bézier curve";
         bezierEdgeToolStripMenuItem.Click += setBezierEdge;
+        //
+        // arcEdgeToolStripMenuItem
+        //
+        arcEdgeToolStripMenuItem.Name = "arcEdgeToolStripMenuItem";
+        arcEdgeToolStripMenuItem.Size = new Size(231, 22);
+        arcEdgeToolStripMenuItem.Text = "Circular arc";
+        arcEdgeToolStripMenuItem.Click += setArcEdge;
         //
         // MainForm
         // 
@@ -322,4 +330,5 @@ partial class MainForm
     private ToolStripSeparator edgeKindSeparator;
     private ToolStripMenuItem lineEdgeToolStripMenuItem;
     private ToolStripMenuItem bezierEdgeToolStripMenuItem;
+    private ToolStripMenuItem arcEdgeToolStripMenuItem;
 }

@@ -21,7 +21,14 @@ public sealed class Edge
         Control2 = new ControlPoint(this, end, Lerp(start.Position, end.Position, 2f / 3f));
     }
 
+    // Strona wygięcia łuku (jak side w InitializeControlPoints); ustawiana przy zamianie na łuk.
+    public float ArcSide { get; internal set; } = 1f;
+
     public bool IsBezier => Kind == EdgeKind.CubicBezier;
+    public bool IsArc => Kind == EdgeKind.CircularArc;
+
+    // Na razie tylko przypadek G0/G0 (półokrąg); G1 na jednym końcu dojdzie w kolejnym kroku.
+    public ArcGeometry Arc => ArcGeometry.Semicircle(Start.Position, End.Position, ArcSide);
 
     public PointF Midpoint => new(
         (Start.Position.X + End.Position.X) * 0.5f,
