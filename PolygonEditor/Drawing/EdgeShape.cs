@@ -2,7 +2,7 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Drawing;
 
-// Krawędź jako łamana - te same punkty służą do rysowania i do trafiania myszą.
+// Edge as a polyline - the same points are used for drawing and for mouse hit testing.
 public static class EdgeShape
 {
     public static PointF[] Points(Edge edge) => edge.Kind switch

@@ -1,6 +1,6 @@
 namespace PolygonEditor.UI;
 
-// Okno dokumentacji (F1): zakładki z treścią z HelpContent.
+// Help window (F1): tabs with the text from HelpContent.
 public sealed class HelpForm : Form
 {
     private static readonly Font BodyFont = new("Segoe UI", 10f);
@@ -50,7 +50,7 @@ public sealed class HelpForm : Form
         return page;
     }
 
-    // "## " nagłówek, "- " punkt listy (wcięcie spacjami = poziom), ``` blok kodu.
+    // "## " heading, "- " list item (leading spaces = level), ``` code block
     private static void AppendFormatted(RichTextBox box, string content)
     {
         bool inCode = false;

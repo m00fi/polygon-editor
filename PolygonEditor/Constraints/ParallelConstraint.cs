@@ -4,7 +4,7 @@ namespace PolygonEditor.Constraints;
 
 public sealed class ParallelConstraint : IConstraint
 {
-    // Dopuszczalny |sin| kąta między krawędziami (ok. 0.3°).
+    // allowed sin of the angle between the edges (about 0.3 degrees)
     public const float Tolerance = 0.005f;
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -76,7 +76,7 @@ public sealed class ParallelConstraint : IConstraint
         if (freeLen < 1e-4f)
             freeLen = 1f;
 
-        // Zachowaj dotychczasowy zwrot obracanej krawędzi.
+        // keep the current direction of the rotated edge
         if (freeDir.X * ux + freeDir.Y * uy < 0f)
         {
             ux = -ux;
@@ -98,7 +98,7 @@ public sealed class ParallelConstraint : IConstraint
         }
         else
         {
-            // Remis: obrót wokół środka krawędzi.
+            // same rank: rotate around the middle of the edge
             PointF mid = freeEdge.Midpoint;
             float half = freeLen * 0.5f;
             start.Position = new PointF(mid.X - ux * half, mid.Y - uy * half);
@@ -106,7 +106,7 @@ public sealed class ParallelConstraint : IConstraint
         }
     }
 
-    // Nieruchoma jest krawędź bliższa kotwicy (mniejsza ranga, potem suma rang); przy remisie Edge1.
+    // the edge closer to the anchor stays (lower rank, then lower rank sum); if equal, Edge1 stays
     private void ResolveEdges(SolveContext context, out Edge fixedEdge, out Edge freeEdge)
     {
         int min1 = Math.Min(context.RankOf(Edge1.Start), context.RankOf(Edge1.End));

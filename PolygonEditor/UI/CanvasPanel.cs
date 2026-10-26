@@ -1,6 +1,6 @@
 namespace PolygonEditor.UI;
 
-/// <summary>Panel canvasu z double buffering.</summary>
+// Canvas panel with double buffering so the scene does not flicker.
 public sealed class CanvasPanel : Panel
 {
     public CanvasPanel()

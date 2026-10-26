@@ -33,7 +33,7 @@ public partial class MainForm : Form
         UpdateStatus("Ready. LMB: drag vertex/polygon • RMB: edge/vertex menu • F1: help.");
     }
 
-    // true = Bresenham, false = Graphics.DrawLine.
+    // true = Bresenham, false = Graphics.DrawLine
     public bool UseBresenhamAlgorithm { get; private set; }
 
     private void WireCanvasEvents()
@@ -70,7 +70,7 @@ public partial class MainForm : Form
         UpdateStatus("Scene reset to demo.");
     }
 
-    // Okno niemodalne, żeby można było czytać pomoc i jednocześnie edytować scenę; tylko jedna instancja.
+    // non modal window so you can read help and edit the scene at the same time; only one instance
     private void MenuHelp_Click(object? sender, EventArgs e)
     {
         if (_helpForm is null || _helpForm.IsDisposed)
@@ -143,7 +143,7 @@ public partial class MainForm : Form
                     return;
                 }
 
-                // Pierwsza wybrana krawędź stoi w miejscu, druga się obraca.
+                // first picked edge stays, the second one rotates
                 bool added = TryAddConstraint(
                     new ParallelConstraint(menuHit.Edge, hit.Edge),
                     new ConstraintAnchor { FixedEdge = menuHit.Edge });
@@ -180,7 +180,7 @@ public partial class MainForm : Form
             _dragVertex = hit.Vertex;
             _dragPolygon = hit.Polygon;
             UpdateStatus("Dragging vertex.");
-            // Wierzchołek od razu podąża za kursorem (z uwzględnieniem ograniczeń).
+            // vertex follows the cursor right away (with constraints)
             DragVertexTo(hit.Vertex, hit.Polygon, point);
             canvasPanel.Invalidate();
         }
@@ -276,8 +276,8 @@ public partial class MainForm : Form
         UpdateStatus("Ready.");
     }
 
-    // Punkt kontrolny jest kotwicą, a wierzchołki jego segmentu stoją w miejscu; ciągłość G1/C1
-    // przesuwa uchwyt po drugiej stronie wierzchołka. Gdy ograniczeń nie da się spełnić, ruch jest wycofywany.
+    // the control point is the anchor and the vertices of its segment stay; G1/C1 continuity
+    // moves the handle on the other side of the vertex. If constraints can't be satisfied, the move is undone.
     private void DragControlPointTo(ControlPoint controlPoint, PointF point)
     {
         SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
@@ -290,8 +290,8 @@ public partial class MainForm : Form
         UpdateStatus("Control point cannot move there - constraints cannot be satisfied.");
     }
 
-    // Gdy ograniczeń nie da się spełnić, ruch jest wycofywany i przesuwany jest cały wielokąt
-    // (translacja zachowuje długości, kierunki i ciągłość).
+    // if constraints can't be satisfied, the move is undone and the whole polygon is moved instead
+    // (moving the whole polygon keeps lengths, directions and continuity)
     private void DragVertexTo(Vertex vertex, Models.Polygon polygon, PointF point)
     {
         SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
@@ -306,7 +306,7 @@ public partial class MainForm : Form
         UpdateStatus("Constraints cannot be satisfied - moving the whole polygon instead.");
     }
 
-    // Dodaje ograniczenie i rozwiązuje scenę; przy sprzeczności przywraca stan sprzed dodania.
+    // adds the constraint and solves; if it conflicts, goes back to the state from before
     private bool TryAddConstraint(IConstraint constraint, ConstraintAnchor anchor)
     {
         SceneSnapshot snapshot = SceneSnapshot.Capture(_scene);
@@ -388,7 +388,7 @@ public partial class MainForm : Form
         arcEdgeToolStripMenuItem.Checked = edge.Kind == EdgeKind.CircularArc;
     }
 
-    // Ciągłość można wybrać tylko obok krzywej; C1 tylko obok Béziera.
+    // continuity can be picked only next to a curve; C1 only next to a Bezier
     private void vertexContextMenu_Opening(object sender, System.ComponentModel.CancelEventArgs e)
     {
         Vertex? vertex = _menuHit.Vertex;
@@ -430,7 +430,7 @@ public partial class MainForm : Form
         }
         else
         {
-            // Snapshot przywraca też ciągłość wierzchołków zmienionych przy okazji.
+            // snapshot also restores continuity of vertices changed on the way
             snapshot.Restore();
             UpdateStatus($"Continuity {continuity} conflicts with existing constraints.");
         }
@@ -454,7 +454,7 @@ public partial class MainForm : Form
         EdgeKind previous = edge.Kind;
         bool hadConstraints = _scene.Constraints.Constraints.Any(c => c.InvolvesEdge(edge));
 
-        // Wierzchołki krawędzi stoją; domyślna ciągłość dopasowuje punkty kontrolne do sąsiadów.
+        // edge vertices stay; default continuity lines up the control points with the neighbours
         _scene.SetEdgeKind(edge, kind);
         if (!_solver.Solve(_scene, new ConstraintAnchor { FixedEdge = edge }))
         {
@@ -501,7 +501,7 @@ public partial class MainForm : Form
         if (dialog.ShowDialog() != DialogResult.OK)
             return false;
 
-        // Akceptujemy zarówno kropkę, jak i przecinek dziesiętny.
+        // accept both dot and comma as decimal separator
         string text = box.Text.Trim().Replace(',', '.');
         return float.TryParse(text, NumberStyles.Float, CultureInfo.InvariantCulture, out length) && length >= 1f;
     }
@@ -513,7 +513,7 @@ public partial class MainForm : Form
         float defaultLength = hit.Edge?.Length ?? 100f;
         if (hit.Edge != null && TryAskLength(defaultLength, out length))
         {
-            // Start krawędzi stoi w miejscu, End przesuwa się wzdłuż krawędzi.
+            // edge Start stays, End moves along the edge
             bool added = TryAddConstraint(
                 new LengthConstraint(hit.Edge, length),
                 new ConstraintAnchor { FixedVertex = hit.Edge.Start });
@@ -544,7 +544,7 @@ public partial class MainForm : Form
         if (edge is null)
             return;
 
-        // Jedna para - usuwamy od razu, bez wybierania drugiej krawędzi.
+        // only one pair - remove it right away without picking the second edge
         IReadOnlyList<ParallelConstraint> pairs = _scene.Constraints.GetParallelConstraints(edge);
         if (pairs.Count == 1)
         {

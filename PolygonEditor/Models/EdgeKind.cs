@@ -1,6 +1,5 @@
 namespace PolygonEditor.Models;
 
-/// <summary>Rodzaj krawędzi.</summary>
 public enum EdgeKind
 {
     Line = 0,

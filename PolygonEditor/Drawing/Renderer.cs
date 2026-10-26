@@ -70,7 +70,7 @@ public sealed class Renderer
         target.DrawImageUnscaled(bitmap, 0, 0);
     }
 
-    // Bézier i łuk to łamane z algorytmów przyrostowych, rysowane tym samym algorytmem co odcinki.
+    // Bezier and arc are polylines from the incremental algorithms, drawn with the same line algorithm as lines
     private void DrawEdge(Bitmap bitmap, Graphics g, Edge edge, bool useBresenham)
     {
         using var pen = new Pen(EdgeColor, 1f);
@@ -93,7 +93,7 @@ public sealed class Renderer
             g.DrawLine(pen, x0, y0, x1, y1);
     }
 
-    // Wielobok Béziera P0-P1-P2-P3 linią przerywaną + punkty kontrolne jako kwadraty.
+    // Bezier control polygon P0-P1-P2-P3 as a dashed line, control points as squares
     private void DrawControlPolygon(Graphics g, Edge edge)
     {
         using Pen dashed = CreateDashedPen();
@@ -103,14 +103,14 @@ public sealed class Renderer
         DrawControlPoint(g, edge.Control2.Position);
     }
 
-    // Cięciwa łuku (odcinek między jego końcami) - tą samą linią przerywaną co wielobok Béziera.
+    // arc chord (line between its two ends), same dashed line as the Bezier polygon
     private void DrawArcChord(Graphics g, Edge edge)
     {
         using Pen dashed = CreateDashedPen();
         g.DrawLine(dashed, edge.Start.Position, edge.End.Position);
     }
 
-    // 6 px kreski i 6 px przerwy (DashPattern w wielokrotnościach grubości pióra).
+    // 6 px dash and 6 px gap (DashPattern is in multiples of the pen width)
     private Pen CreateDashedPen() => new(ControlPolygonColor, 1.5f) { DashPattern = [4f, 4f] };
 
     private void DrawControlPoint(Graphics g, PointF position)
@@ -133,7 +133,7 @@ public sealed class Renderer
         g.DrawEllipse(stroke, rect);
     }
 
-    // Etykieta odsunięta od środka sąsiednich wierzchołków, czyli zwykle na zewnątrz kąta.
+    // label is pushed away from the middle of the neighbour vertices, so it is usually outside the corner
     private static void DrawContinuityLabel(Graphics g, Vertex vertex)
     {
         if (vertex.Incoming is null || vertex.Outgoing is null)
@@ -175,7 +175,7 @@ public sealed class Renderer
         DrawParallelMarks(g, parallel.Edge2, number);
     }
 
-    // Dwie kreski w poprzek krawędzi + numer pary (ta sama liczba na obu krawędziach).
+    // two ticks across the edge plus the pair number (same number on both edges)
     private static void DrawParallelMarks(Graphics g, Edge edge, int number)
     {
         if (!TryGetEdgeFrame(edge, out PointF mid, out float ux, out float uy, out float nx, out float ny))
@@ -189,7 +189,7 @@ public sealed class Renderer
         DrawTick(g, pen, mid, ux, uy, nx, ny, -spacing, tickHalf);
         DrawTick(g, pen, mid, ux, uy, nx, ny, spacing, tickHalf);
 
-        // Numer dokładnie po przeciwnej stronie niż etykieta długości (DrawLength odwraca normalną, gdy ny < 0).
+        // number goes on the opposite side to the length label (DrawLength flips the normal when ny < 0)
         if (ny >= 0f)
         {
             nx = -nx;

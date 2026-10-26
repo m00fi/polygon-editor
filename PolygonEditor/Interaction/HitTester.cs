@@ -11,7 +11,7 @@ public static class HitTester
 
     public static HitResult HitTest(Models.Scene scene, PointF point)
     {
-        // Priorytet: wierzchołek > punkt kontrolny > krawędź > wnętrze.
+        // priority: vertex, then control point, then edge, then inside
         foreach (Models.Polygon polygon in scene.Polygons)
         {
             foreach (Vertex vertex in polygon.Vertices)
@@ -53,7 +53,7 @@ public static class HitTester
         return HitResult.None;
     }
 
-    // Obwód wielokąta z uwzględnieniem krzywych i łuków; ostatni punkt każdej krawędzi to początek następnej.
+    // polygon outline with curves and arcs; the last point of each edge is the first point of the next one
     private static List<PointF> Outline(Models.Polygon polygon)
     {
         var outline = new List<PointF>();
@@ -96,7 +96,7 @@ public static class HitTester
         return Distance(p, projection);
     }
 
-    // Reguła even-odd (dopuszcza samoprzecięcia).
+    // even-odd rule (works with self intersections)
     private static bool IsPointInPolygon(PointF point, IReadOnlyList<PointF> outline)
     {
         bool inside = false;

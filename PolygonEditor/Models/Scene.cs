@@ -25,7 +25,7 @@ public sealed class Scene
         _constraintStore.Clear();
     }
 
-    // Ograniczenia długości/równoległości dotyczą tylko odcinków, więc przy zmianie rodzaju są usuwane.
+    // length/parallel constraints only make sense for lines, so they are removed when the kind changes
     public void SetEdgeKind(Edge edge, EdgeKind kind)
     {
         ArgumentNullException.ThrowIfNull(edge);
@@ -44,7 +44,7 @@ public sealed class Scene
 
         if (kind == EdgeKind.CircularArc)
         {
-            // Łuk nie dopuszcza C1, a G1 może mieć tylko na jednym końcu (wtedy zostaje początek).
+            // an arc does not allow C1 and can have G1 only at one end (then the start keeps it)
             foreach (Vertex end in new[] { edge.Start, edge.End })
             {
                 if (end.Continuity == Continuity.C1)
@@ -56,8 +56,8 @@ public sealed class Scene
         }
     }
 
-    // Ciągłość wybrana przez użytkownika. Łuk może mieć G1 tylko na jednym końcu, więc drugi koniec
-    // każdego sąsiedniego łuku przechodzi wtedy na G0. Zwraca wierzchołki zmienione przy okazji.
+    // continuity picked by the user. An arc can have G1 only at one end, so the other end
+    // of every neighbouring arc is set to G0. Returns the vertices that were changed on the way.
     public IReadOnlyList<Vertex> SetContinuity(Vertex vertex, Continuity continuity)
     {
         if (continuity == Continuity.C1 && !vertex.AllowsC1)
@@ -85,8 +85,8 @@ public sealed class Scene
         return changed;
     }
 
-    // Przy obiegu zgodnym z zegarem (pole > 0, oś Y w dół) normalna (-dy, dx) wskazuje do wnętrza,
-    // więc na zewnątrz jest strona przeciwna.
+    // for a clockwise polygon (area > 0, Y down) the normal (-dy, dx) points inside,
+    // so outside is the other side
     private float OutwardSide(Edge edge)
     {
         Polygon? polygon = FindPolygon(edge);
@@ -109,7 +109,7 @@ public sealed class Scene
         return mid;
     }
 
-    // Zwraca false, gdy w wielokącie zostałyby mniej niż 3 wierzchołki.
+    // returns false if the polygon would end up with less than 3 vertices
     public bool RemoveVertex(Polygon polygon, Vertex vertex)
     {
         if (!polygon.CanRemoveVertex(vertex) || vertex.Incoming is null || vertex.Outgoing is null)
@@ -127,9 +127,9 @@ public sealed class Scene
         return true;
     }
 
-    // Ciągłość wybrana przez użytkownika zostaje; inaczej G1 obok Béziera, a G0 w pozostałych przypadkach
-    // (polecenie określa domyślną ciągłość tylko dla Béziera - łuk domyślnie ma G0 na obu końcach, czyli półokrąg).
-    // Domyślne G1 nie jest ustawiane, gdy sąsiedni łuk ma już G1 na drugim końcu.
+    // continuity picked by the user stays; otherwise G1 next to a Bezier and G0 everywhere else
+    // (the task gives a default only for Bezier, so an arc starts with G0 at both ends = half circle)
+    // default G1 is not used if a neighbouring arc already has G1 at its other end
     private static void UpdateDefaultContinuity(Vertex vertex)
     {
         if (vertex.ContinuityUserSet)

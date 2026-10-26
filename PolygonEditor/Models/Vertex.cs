@@ -6,7 +6,7 @@ public sealed class Vertex
 
     public Continuity Continuity { get; set; } = Continuity.G0;
 
-    // True, gdy użytkownik sam wybrał ciągłość - wtedy zmiana rodzaju krawędzi jej nie nadpisuje.
+    // true if the user picked the continuity, then changing the edge kind does not overwrite it
     public bool ContinuityUserSet { get; set; }
 
     public Edge? Incoming { get; internal set; }
@@ -26,7 +26,7 @@ public sealed class Vertex
         Position = position;
     }
 
-    // Ciągłość ma znaczenie tylko wtedy, gdy co najmniej jedna sąsiednia krawędź nie jest odcinkiem.
+    // continuity matters only if at least one neighbour edge is not a line
     public bool HasAdjacentCurve =>
         (Incoming is not null && Incoming.Kind != EdgeKind.Line)
         || (Outgoing is not null && Outgoing.Kind != EdgeKind.Line);
@@ -37,7 +37,7 @@ public sealed class Vertex
     public bool HasAdjacentArc =>
         (Incoming is not null && Incoming.IsArc) || (Outgoing is not null && Outgoing.IsArc);
 
-    // C1 tylko obok Béziera i nigdy obok łuku (łuk dopuszcza G0/G1).
+    // C1 only next to a Bezier and never next to an arc (an arc allows G0/G1)
     public bool AllowsC1 => HasAdjacentBezier && !HasAdjacentArc;
 
     public void SetContinuityByUser(Continuity continuity)

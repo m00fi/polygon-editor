@@ -2,12 +2,12 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Constraints;
 
-// Ciągłość G1/C1 w wierzchołku V między krawędzią wchodzącą A i wychodzącą B.
-// Uchwyt to punkt wyznaczający styczną przy V: punkt kontrolny Béziera albo drugi koniec odcinka.
-// G1: uchwyt wchodzący, V i uchwyt wychodzący leżą na prostej (V pomiędzy).
-// C1: dodatkowo równe wektory styczne; pochodna Béziera to 3·(P1 − P0), a odcinka (End − Start),
-// stąd skala 3 dla Béziera i 1 dla odcinka.
-// Nie jest trzymane w ConstraintStore - solver tworzy je na bieżąco z ustawień wierzchołków.
+// G1/C1 continuity at vertex V between incoming edge A and outgoing edge B.
+// A "handle" is the point that sets the tangent at V: a Bezier control point or the other end of a line.
+// G1: incoming handle, V and outgoing handle lie on one line, with V in the middle.
+// C1: also equal tangent vectors. Bezier derivative at the end is 3 * (P1 - P0), for a line it is (End - Start),
+// so the scale is 3 on a Bezier side and 1 on a line side.
+// Not stored in ConstraintStore, the solver creates these from the vertex settings every time.
 public sealed class ContinuityConstraint : IConstraint
 {
     public const float PositionTolerance = 0.5f;
@@ -38,7 +38,7 @@ public sealed class ContinuityConstraint : IConstraint
                 if (vertex.Incoming is null || vertex.Outgoing is null)
                     continue;
 
-                // Obok łuku ciągłość zapewnia sama geometria łuku (Edge.Arc liczy go ze stycznej sąsiada).
+                // next to an arc the arc itself handles continuity (Edge.Arc is built from the neighbour tangent)
                 if (vertex.Incoming.IsArc || vertex.Outgoing.IsArc)
                     continue;
 
@@ -52,7 +52,7 @@ public sealed class ContinuityConstraint : IConstraint
     private Handle In => Incoming.IsBezier ? new Handle(null, Incoming.Control2) : new Handle(Incoming.Start, null);
     private Handle Out => Outgoing.IsBezier ? new Handle(null, Outgoing.Control1) : new Handle(Outgoing.End, null);
 
-    // Out = V + (V − In) · ratio przy C1.
+    // for C1: Out = V + (V - In) * ratio
     private float C1Ratio => (Incoming.IsBezier ? 3f : 1f) / (Outgoing.IsBezier ? 3f : 1f);
 
     public bool IsSatisfied()
@@ -85,8 +85,8 @@ public sealed class ContinuityConstraint : IConstraint
         if (inFixed && outFixed)
             return;
 
-        // Przesuwamy uchwyt, który nie jest kotwicą; jeśli oba są wolne - punkt kontrolny,
-        // bo jego ruch nie psuje innych ograniczeń (wierzchołek mógłby rozjechać długości).
+        // move the handle that is not the anchor; if both are free move the control point,
+        // because that does not break other constraints (moving a vertex could break lengths)
         bool moveOut = inFixed
             || (!outFixed && (outHandle.ControlPoint is not null || inHandle.ControlPoint is null));
 
@@ -111,7 +111,7 @@ public sealed class ContinuityConstraint : IConstraint
         }
     }
 
-    // Przy G1 przesuwany uchwyt zachowuje swoją odległość od V (gdy jest zerowa - bierze drugą).
+    // for G1 the moved handle keeps its distance from V (if it is zero we take the other one)
     private static float KeptLength(PointF current, PointF other)
     {
         float length = Length(current);

@@ -1,13 +1,13 @@
 ﻿namespace PolygonEditor.Constraints;
 
-// Relaksacja: w każdej iteracji każde ograniczenie robi jeden krok korekty,
-// aż wszystkie będą spełnione albo skończy się limit iteracji.
+// Relaxation solver: every iteration each constraint does one small fix,
+// we stop when all of them are satisfied or we run out of iterations.
 internal sealed class ConstraintSolver
 {
     public const int MaxIterations = 100;
 
-    // Ograniczenia użytkownika (ConstraintStore) + ciągłość wynikająca z ustawień wierzchołków.
-    // Zwraca true, gdy po rozwiązaniu wszystkie są spełnione.
+    // user constraints (from ConstraintStore) plus continuity built from the vertex settings
+    // returns true if everything is satisfied at the end
     public bool Solve(Models.Scene scene, ConstraintAnchor anchor)
     {
         List<IConstraint> constraints = [.. scene.Constraints.Constraints, .. ContinuityConstraint.CreateAll(scene)];

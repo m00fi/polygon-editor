@@ -11,13 +11,13 @@ namespace PolygonEditor.Constraints
         IReadOnlyList<Edge> InvolvedEdges { get; }
         bool InvolvesEdge(Edge edge);
 
-        // Jeden krok korekty: przesuwa wierzchołki dalsze od kotwicy (wg rang z kontekstu).
+        // one fixing step: moves the vertices that are further from the anchor (by rank)
         void Satisfy(SolveContext context);
 
         bool IsSatisfied();
     }
 
-    // Element trzymany w miejscu podczas rozwiązywania (np. przeciągany wierzchołek).
+    // the thing that has to stay in place while solving (e.g. the dragged vertex)
     public readonly struct ConstraintAnchor
     {
         public Vertex? FixedVertex { get; init; }

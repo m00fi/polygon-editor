@@ -2,7 +2,7 @@ using PolygonEditor.Constraints;
 
 namespace PolygonEditor.Models;
 
-// Stan geometrii i lista ograniczeń - pozwala wycofać operację, której solver nie umie spełnić.
+// Saves the geometry and the constraint list, so we can undo an operation the solver could not satisfy.
 public sealed class SceneSnapshot
 {
     private readonly ConstraintStore _store;

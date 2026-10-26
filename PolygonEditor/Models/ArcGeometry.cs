@@ -1,11 +1,11 @@
 namespace PolygonEditor.Models;
 
-// Łuk okręgu: punkt(θ) = Center + Radius·(cos θ, sin θ) dla θ od StartAngle do StartAngle + SweepAngle.
-// Kąty w radianach, oś Y w dół (dodatni Sweep = zgodnie z ruchem wskazówek zegara na ekranie).
+// Circle arc: point(angle) = Center + Radius * (cos angle, sin angle), angle goes from StartAngle to StartAngle + SweepAngle.
+// Angles in radians, Y axis points down (positive sweep = clockwise on screen).
 public readonly record struct ArcGeometry(PointF Center, float Radius, float StartAngle, float SweepAngle)
 {
-    // G0 na obu końcach: półokrąg o środku w środku cięciwy i promieniu |cięciwa| / 2.
-    // side = +1 wygina łuk w stronę normalnej (-dy, dx), side = -1 w przeciwną (jak Edge.InitializeControlPoints).
+    // G0 at both ends: half circle, center in the middle of the chord, radius = half of the chord length.
+    // side = +1 bends the arc towards the normal (-dy, dx), side = -1 the other way (same as Edge.InitializeControlPoints).
     public static ArcGeometry Semicircle(PointF start, PointF end, float side)
     {
         var center = new PointF((start.X + end.X) * 0.5f, (start.Y + end.Y) * 0.5f);
@@ -14,14 +14,14 @@ public readonly record struct ArcGeometry(PointF Center, float Radius, float Sta
         float radius = MathF.Sqrt(dx * dx + dy * dy) * 0.5f;
         float startAngle = MathF.Atan2(start.Y - center.Y, start.X - center.X);
 
-        // Obrót o +π/2 od kierunku do Start daje kierunek -(−dy, dx), więc dla side = +1 kręcimy w drugą stronę.
+        // turning 90 degrees from the direction to Start gives -(-dy, dx), so for side = +1 we go the other way
         float sweep = side > 0f ? -MathF.PI : MathF.PI;
         return new ArcGeometry(center, radius, startAngle, sweep);
     }
 
-    // G1 na początku: łuk wychodzi ze start w kierunku tangent. Środek leży na prostej przez start
-    // prostopadłej do stycznej i jest równo odległy od obu końców: C = start + λ·n, λ = |d|² / (2·n·d).
-    // null, gdy styczna jest równoległa do cięciwy (łuk zdegenerowany do odcinka).
+    // G1 at the start: the arc leaves start in the tangent direction. The center is on the line through start
+    // perpendicular to the tangent and is equally far from both ends: C = start + lambda * n, lambda = |d|^2 / (2 * dot(n, d)).
+    // returns null when the tangent is parallel to the chord (the arc would be a straight line)
     public static ArcGeometry? TangentAtStart(PointF start, PointF end, PointF tangent)
     {
         float tLen = MathF.Sqrt(tangent.X * tangent.X + tangent.Y * tangent.Y);
@@ -42,7 +42,7 @@ public readonly record struct ArcGeometry(PointF Center, float Radius, float Sta
         float startAngle = MathF.Atan2(start.Y - center.Y, start.X - center.X);
         float endAngle = MathF.Atan2(end.Y - center.Y, end.X - center.X);
 
-        // Przy rosnącym kącie łuk w punkcie start biegnie w kierunku (−ry, rx); zgodny ze styczną => sweep > 0.
+        // with a growing angle the arc at start moves in direction (-ry, rx); if that matches the tangent, sweep > 0
         float rx = start.X - center.X;
         float ry = start.Y - center.Y;
         bool positive = -ry * tangent.X + rx * tangent.Y > 0f;
@@ -62,7 +62,7 @@ public readonly record struct ArcGeometry(PointF Center, float Radius, float Sta
         return new ArcGeometry(center, MathF.Abs(lambda), startAngle, sweep);
     }
 
-    // G1 na końcu: łuk dochodzi do end w kierunku tangent - to łuk od end do start ze styczną −tangent, odwrócony.
+    // G1 at the end: compute the arc from end to start with the opposite tangent, then reverse it
     public static ArcGeometry? TangentAtEnd(PointF start, PointF end, PointF tangent)
     {
         ArcGeometry? reversed = TangentAtStart(end, start, new PointF(-tangent.X, -tangent.Y));
@@ -72,7 +72,7 @@ public readonly record struct ArcGeometry(PointF Center, float Radius, float Sta
         return new ArcGeometry(r.Center, r.Radius, r.StartAngle + r.SweepAngle, -r.SweepAngle);
     }
 
-    // Kierunek ruchu wzdłuż łuku w punkcie t.
+    // direction of movement along the arc at t
     public PointF TangentAt(float t)
     {
         float angle = StartAngle + SweepAngle * t;

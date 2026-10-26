@@ -1,6 +1,6 @@
 namespace PolygonEditor.Drawing;
 
-/// <summary>Rysowanie odcinka algorytmem Bresenhama.</summary>
+// Bresenham line drawing, integer only, works in every direction.
 public static class Bresenham
 {
     public static void DrawLine(Bitmap bitmap, int x0, int y0, int x1, int y1, Color color)

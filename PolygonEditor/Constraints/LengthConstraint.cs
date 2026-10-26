@@ -4,7 +4,7 @@ namespace PolygonEditor.Constraints;
 
 public sealed class LengthConstraint : IConstraint
 {
-    // Dopuszczalna różnica długości (px).
+    // allowed length error in pixels
     public const float Tolerance = 0.5f;
 
     public Guid Id { get; } = Guid.NewGuid();
@@ -44,7 +44,7 @@ public sealed class LengthConstraint : IConstraint
 
         if (startRank < endRank)
         {
-            // Start bliżej kotwicy - przesuwamy End wzdłuż krawędzi.
+            // Start is closer to the anchor, so move End along the edge
             end.Position = new PointF(
                 start.Position.X + dirX * TargetLength,
                 start.Position.Y + dirY * TargetLength);
@@ -57,7 +57,7 @@ public sealed class LengthConstraint : IConstraint
         }
         else
         {
-            // Remis: oba końce symetrycznie względem środka krawędzi.
+            // same rank: move both ends evenly around the middle
             PointF mid = Edge.Midpoint;
             float half = TargetLength * 0.5f;
             start.Position = new PointF(mid.X - dirX * half, mid.Y - dirY * half);

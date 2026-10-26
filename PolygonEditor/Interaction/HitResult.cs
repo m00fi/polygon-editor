@@ -8,7 +8,7 @@ public readonly struct HitResult
     public Models.Polygon? Polygon { get; }
     public Vertex? Vertex { get; }
 
-    // Przy trafieniu w punkt kontrolny to krawędź, do której on należy.
+    // when a control point is hit, this is the edge it belongs to
     public Edge? Edge { get; }
     public ControlPoint? ControlPoint { get; }
 

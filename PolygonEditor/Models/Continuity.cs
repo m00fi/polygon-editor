@@ -1,14 +1,14 @@
 namespace PolygonEditor.Models;
 
-/// <summary>Klasa ciągłości w wierzchołku.</summary>
+// Continuity required at a vertex next to a curve or an arc.
 public enum Continuity
 {
-    /// <summary>Ciągłość położenia.</summary>
+    // same position (always true, edges share the vertex)
     G0 = 0,
 
-    /// <summary>Ciągłość kierunku stycznej.</summary>
+    // same tangent direction
     G1 = 1,
 
-    /// <summary>Ciągłość wektora stycznego (tylko Bézier).</summary>
+    // same tangent vector, only next to a Bezier curve
     C1 = 2
 }

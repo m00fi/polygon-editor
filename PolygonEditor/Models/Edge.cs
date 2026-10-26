@@ -1,15 +1,15 @@
 namespace PolygonEditor.Models;
 
-// Krawędź skierowana od Start do End.
+// Directed edge from Start to End.
 public sealed class Edge
 {
     public Vertex Start { get; internal set; }
     public Vertex End { get; internal set; }
 
-    // Zmieniany przez Scene.SetEdgeKind, która pilnuje ograniczeń i ciągłości.
+    // changed through Scene.SetEdgeKind, which takes care of constraints and continuity
     public EdgeKind Kind { get; internal set; } = EdgeKind.Line;
 
-    // P1 i P2 krzywej Béziera (P0 = Start, P3 = End).
+    // P1 and P2 of the Bezier curve (P0 = Start, P3 = End)
     public ControlPoint Control1 { get; }
     public ControlPoint Control2 { get; }
 
@@ -21,18 +21,18 @@ public sealed class Edge
         Control2 = new ControlPoint(this, end, Lerp(start.Position, end.Position, 2f / 3f));
     }
 
-    // Strona wygięcia łuku (jak side w InitializeControlPoints); ustawiana przy zamianie na łuk.
+    // which side the arc bends to (like side in InitializeControlPoints), set when the edge becomes an arc
     public float ArcSide { get; internal set; } = 1f;
 
     public bool IsBezier => Kind == EdgeKind.CubicBezier;
     public bool IsArc => Kind == EdgeKind.CircularArc;
 
-    // G1 na jednym końcu: łuk styczny do sąsiedniej krawędzi; G0 na obu (lub styczna równoległa do cięciwy): półokrąg.
-    // Łuk sam dopasowuje się do sąsiada, więc w jego wierzchołkach solver nie potrzebuje ograniczenia ciągłości.
+    // G1 at one end: arc tangent to the neighbour edge; G0 at both ends (or tangent parallel to the chord): half circle.
+    // The arc follows its neighbour by itself, so the solver does not need a continuity constraint at its vertices.
     public ArcGeometry Arc => ComputeArc(useNeighbours: true);
 
-    // useNeighbours = false przy liczeniu stycznej dla sąsiedniego łuku - przerywa cykl, gdy dwa łuki
-    // mają G1 we wspólnym wierzchołku (wtedy sąsiad jest brany jako półokrąg).
+    // useNeighbours = false when computing the tangent for a neighbouring arc - stops the loop when two arcs
+    // have G1 at the same vertex (then the neighbour is taken as a half circle)
     private ArcGeometry ComputeArc(bool useNeighbours)
     {
         PointF s = Start.Position;
@@ -52,7 +52,7 @@ public sealed class Edge
         return ArcGeometry.Semicircle(s, e, ArcSide);
     }
 
-    // Kierunek ruchu wzdłuż krawędzi w End (przy dojściu) i w Start (przy wyjściu) - to z nich łuk bierze styczną.
+    // direction of movement along the edge at End (arriving) and at Start (leaving); the arc takes its tangent from these
     public PointF ArrivalDirection() => Kind switch
     {
         EdgeKind.CubicBezier => Sub(End.Position, Control2.Position),
@@ -93,8 +93,8 @@ public sealed class Edge
         }
     }
 
-    // 1/3 i 2/3 cięciwy, odsunięte w bok o 1/4 jej długości, żeby po zamianie krzywa była od razu widoczna.
-    // side = +1 odsuwa w stronę normalnej (-dy, dx), side = -1 w przeciwną.
+    // 1/3 and 2/3 of the chord, moved sideways by 1/4 of its length so the new curve is visible right away
+    // side = +1 moves towards the normal (-dy, dx), side = -1 the other way
     public void InitializeControlPoints(float side = 1f)
     {
         PointF a = Start.Position;

@@ -2,8 +2,8 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Constraints;
 
-// Ranga wierzchołka = odległość BFS od kotwicy (0 = nieruchomy). Ograniczenia przesuwają
-// wierzchołek o większej randze, więc korekty rozchodzą się od kotwicy na zewnątrz.
+// Rank of a vertex = BFS distance from the anchor (0 = does not move). Constraints move
+// the vertex with the higher rank, so the fixes spread out from the anchor.
 public sealed class SolveContext
 {
     public const int Unreachable = int.MaxValue;
@@ -21,7 +21,7 @@ public sealed class SolveContext
 
     public bool IsFixed(Vertex vertex) => RankOf(vertex) == 0;
 
-    // Punkt kontrolny jest nieruchomy tylko jako kotwica (przeciągany); pozostałe są najluźniejsze.
+    // a control point is fixed only when it is the anchor (being dragged), the rest are free
     public bool IsFixed(ControlPoint controlPoint) => controlPoint == _fixedControlPoint;
 
     public static SolveContext Build(IReadOnlyList<IConstraint> constraints, ConstraintAnchor anchor)
@@ -30,7 +30,7 @@ public sealed class SolveContext
         var ranks = new Dictionary<Vertex, int>();
         var queue = new Queue<Vertex>();
 
-        // Przy przeciąganiu punktu kontrolnego oba wierzchołki jego segmentu stoją w miejscu.
+        // when dragging a control point both vertices of its segment stay in place
         Edge? fixedEdge = anchor.FixedEdge ?? anchor.FixedControlPoint?.Edge;
         foreach (Vertex? seed in new[] { anchor.FixedVertex, fixedEdge?.Start, fixedEdge?.End })
         {
@@ -65,7 +65,7 @@ public sealed class SolveContext
         }
     }
 
-    // Łączy wierzchołki krawędzi występujących we wspólnym ograniczeniu (np. równoległość między wielokątami).
+    // links vertices of edges that share a constraint (e.g. parallel edges in different polygons)
     private static Dictionary<Vertex, List<Vertex>> BuildConstraintLinks(IReadOnlyList<IConstraint> constraints)
     {
         var links = new Dictionary<Vertex, List<Vertex>>();

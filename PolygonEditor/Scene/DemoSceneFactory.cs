@@ -3,17 +3,17 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Scene;
 
-// Scena startowa. Nowy wielokąt: AddPolygon(scene, punkty...), nazwać potrzebne krawędzie
-// (Edges[i] biegnie od i-tego do następnego punktu), dodać ograniczenia / krzywe. Settle na końcu
-// dopasowuje punkty kontrolne do ustawionej ciągłości.
+// Starting scene. New polygon: AddPolygon(scene, points...), name the edges you need
+// (Edges[i] goes from point i to the next one), then add constraints / curves. Settle at the end
+// moves the control points so they match the continuity.
 public static class DemoSceneFactory
 {
     public static Models.Scene Create()
     {
         var scene = new Models.Scene();
 
-        // Pięciokąt: długość 220 i równoległość góra-dół (para 1), lewa krawędź równoległa do sześciokąta (para 2),
-        // Bézier z G1 na początku (domyślne) i C1 na końcu (obok odcinka: uchwyt = 1/3 jego długości).
+        // Pentagon: length 220 and top-bottom parallel (pair 1), left edge parallel to the hexagon (pair 2),
+        // Bezier with G1 at the start (default) and C1 at the end (next to a line: handle = 1/3 of its length).
         Models.Polygon pentagon = AddPolygon(scene, (127, 110), (347, 97), (374, 218), (293, 309), (22, 325));
         Edge pentagonTop = pentagon.Edges[0];
         Edge pentagonCurve = pentagon.Edges[1];
@@ -27,9 +27,9 @@ public static class DemoSceneFactory
         pentagonCurve.Control1.Position = new PointF(407, 92);
         pentagonCurve.Control2.Position = new PointF(401, 187);
 
-        // Sześciokąt: lewa dolna krawędź ma dwa ograniczenia naraz (długość 70 i równoległość z pięciokątem),
-        // łuk z G1 na początku (styczny do lewej górnej krawędzi, koniec G0), półokrąg z G0 na obu końcach
-        // i Bézier z G0 przy półokręgu oraz domyślnym G1 przy lewej krawędzi.
+        // Hexagon: lower left edge has two constraints at once (length 70 and parallel to the pentagon),
+        // arc with G1 at the start (tangent to the upper left edge, end is G0), half circle with G0 at both ends
+        // and a Bezier with G0 next to the half circle and default G1 next to the left edge.
         Models.Polygon hexagon = AddPolygon(scene, (485, 224), (516, 161), (570, 96), (800, 215), (731, 351), (571, 371));
         Edge hexagonLeft = hexagon.Edges[0];
         Edge hexagonTangentArc = hexagon.Edges[2];
@@ -57,7 +57,7 @@ public static class DemoSceneFactory
         return polygon;
     }
 
-    // Jednorazowe rozwiązanie ograniczeń, żeby scena startowała w stanie spójnym.
+    // solve once so the scene starts in a valid state
     private static void Settle(Models.Scene scene)
     {
         if (!new ConstraintSolver().Solve(scene, new ConstraintAnchor()))

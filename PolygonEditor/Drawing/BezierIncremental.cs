@@ -2,8 +2,8 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Drawing;
 
-// Punkty krzywej Béziera 3. stopnia algorytmem przyrostowym: przejście do bazy potęgowej
-// B(t) = a·t^3 + b·t^2 + c·t + d, a potem różnice przednie - w pętli są tylko dodawania.
+// Cubic Bezier points with the incremental method: convert to power basis
+// B(t) = a*t^3 + b*t^2 + c*t + d, then use forward differences so the loop only adds.
 public static class BezierIncremental
 {
     public const float PixelsPerStep = 4f;
@@ -16,7 +16,7 @@ public static class BezierIncremental
     public static PointF[] ComputePoints(PointF p0, PointF p1, PointF p2, PointF p3) =>
         ComputePoints(p0, p1, p2, p3, StepsFor(p0, p1, p2, p3));
 
-    // Długość wieloboku kontrolnego ogranicza z góry długość krzywej, więc odcinki mają co najwyżej ~4 px.
+    // the control polygon is never shorter than the curve, so the segments are at most about 4 px
     public static int StepsFor(PointF p0, PointF p1, PointF p2, PointF p3)
     {
         float length = Distance(p0, p1) + Distance(p1, p2) + Distance(p2, p3);
@@ -27,7 +27,7 @@ public static class BezierIncremental
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(steps, 1);
 
-        // Współczynniki w bazie potęgowej.
+        // power basis coefficients
         double ax = -p0.X + 3.0 * p1.X - 3.0 * p2.X + p3.X;
         double ay = -p0.Y + 3.0 * p1.Y - 3.0 * p2.Y + p3.Y;
         double bx = 3.0 * p0.X - 6.0 * p1.X + 3.0 * p2.X;
@@ -35,7 +35,7 @@ public static class BezierIncremental
         double cx = 3.0 * (p1.X - p0.X);
         double cy = 3.0 * (p1.Y - p0.Y);
 
-        // Różnice przednie dla kroku h: Δ1 = ah³ + bh² + ch, Δ2 = 6ah³ + 2bh², Δ3 = 6ah³.
+        // forward differences for step h: d1 = a*h^3 + b*h^2 + c*h, d2 = 6a*h^3 + 2b*h^2, d3 = 6a*h^3
         double h = 1.0 / steps;
         double h2 = h * h;
         double h3 = h2 * h;
@@ -63,7 +63,7 @@ public static class BezierIncremental
             points[i] = new PointF((float)x, (float)y);
         }
 
-        // Ostatni punkt dokładnie w P3 (bez błędu sumowania).
+        // last point exactly at P3 (no rounding error from the sums)
         points[steps] = p3;
         return points;
     }

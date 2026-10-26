@@ -14,14 +14,12 @@ public sealed class ConstraintStore
     {
     }
 
-    public static ConstraintStore Create() => new ConstraintStore();
-
     public void AddConstraint(IConstraint constraint)
     {
         ArgumentNullException.ThrowIfNull(constraint);
         if (constraint is LengthConstraint length)
         {
-            // Usuń poprzedni Length na tej samej krawędzi
+            // remove the old length constraint on this edge first
             constraints.RemoveAll(c => c is LengthConstraint lc && lc.Edge == length.Edge);
             constraints.Add(length);
             return;
@@ -53,7 +51,7 @@ public sealed class ConstraintStore
         constraints.RemoveAll(c => c is LengthConstraint lc && lc.Edge == edge);
     }
 
-    // Zwraca true, gdy istniała równoległość między tymi krawędziami.
+    // returns true if there was a parallel constraint between these edges
     public bool RemoveParallelConstraint(Edge edge1, Edge edge2)
     {
         return constraints.RemoveAll(c =>
@@ -67,7 +65,7 @@ public sealed class ConstraintStore
 
     public void Clear() => constraints.Clear();
 
-    // Przywraca listę ograniczeń zapamiętaną w SceneSnapshot.
+    // used by SceneSnapshot to put back the saved list
     internal void RestoreFrom(IEnumerable<IConstraint> saved)
     {
         constraints = [.. saved];

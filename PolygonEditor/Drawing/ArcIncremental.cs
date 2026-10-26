@@ -2,8 +2,8 @@ using PolygonEditor.Models;
 
 namespace PolygonEditor.Drawing;
 
-// Punkty łuku okręgu przyrostowo: wektor promienia jest obracany o stały kąt Δ
-// (cos Δ i sin Δ liczone raz), więc w pętli są tylko mnożenia i dodawania.
+// Arc points computed incrementally: the radius vector is rotated by a fixed small angle
+// (cos and sin of that angle are computed once), so the loop only multiplies and adds.
 public static class ArcIncremental
 {
     public const float PixelsPerStep = 4f;
@@ -18,7 +18,7 @@ public static class ArcIncremental
 
     public static PointF[] ComputePoints(Edge edge) => ComputePoints(edge.Arc, edge.End.Position);
 
-    // end - dokładny koniec łuku (bez błędu sumowania obrotów).
+    // end - exact end point of the arc (avoids rounding error from many rotations)
     public static PointF[] ComputePoints(ArcGeometry arc, PointF end)
     {
         int steps = StepsFor(arc);
